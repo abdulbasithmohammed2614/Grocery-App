@@ -41,17 +41,39 @@ import product8 from "../images/category-pet-care.jpg";
 import product9 from "../images/category-snack-munchies.jpg";
 import product10 from "../images/category-tea-coffee-drinks.jpg";
 import { Link } from "react-router-dom";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import Swal from "sweetalert2";
+import { useCart } from "../context/CartContext";
 import ProductItem from "../ProductList/ProductItem";
 import Slider from "react-slick";
 // import "slick-carousel/slick/slick.css";
 // import "slick-carousel/slick/slick-theme.css";
 import { Slide, Zoom } from "react-awesome-reveal";
-import { useEffect } from "react";
 // import { PulseLoader } from 'react-spinners';
 import { MagnifyingGlass } from "react-loader-spinner";
 const Home = () => {
+  const { addToCart } = useCart();
   const [isVisible, setIsVisible] = useState(false);
+
+  const handleHomeAddToCart = (name, price, img) => {
+    addToCart(
+      {
+        id: `home-${name.replace(/\s+/g, "-").toLowerCase()}`,
+        title: name,
+        name: name,
+        price: Number(price),
+        image: img,
+      },
+      1
+    );
+    Swal.fire({
+      icon: "success",
+      title: "Added to Cart!",
+      text: `${name} has been added to your basket.`,
+      timer: 1500,
+      showConfirmButton: false,
+    });
+  };
 
   const toggleVisibility = () => {
     if (window.pageYOffset > 300) {
@@ -259,7 +281,7 @@ const Home = () => {
                               Introduced a new model for online grocery shopping
                               and convenient home delivery.
                             </p>
-                            <Link to="#!" className="btn btn-dark mt-3">
+                            <Link to="/Shop" className="btn btn-dark mt-3">
                               Shop Now{" "}
                               <i className="feather-icon icon-arrow-right ms-1" />
                             </Link>
@@ -287,7 +309,7 @@ const Home = () => {
                               Free Shipping to First-Time Customers Only, After
                               promotions and discounts are applied.
                             </p>
-                            <Link to="#!" className="btn btn-dark mt-3">
+                            <Link to="/Shop" className="btn btn-dark mt-3">
                               Shop Now{" "}
                               <i className="feather-icon icon-arrow-right ms-1" />
                             </Link>
@@ -396,7 +418,7 @@ const Home = () => {
                                   </span>
                                 </span>
                               </div>
-                              <Link to="#" className="btn btn-dark">
+                              <Link to="/Shop" className="btn btn-dark">
                                 Shop Now
                               </Link>
                             </div>
@@ -427,7 +449,7 @@ const Home = () => {
                                 Refresh your day <br />
                                 the fruity way
                               </p>
-                              <Link to="#" className="btn btn-dark mt-2">
+                              <Link to="/Shop" className="btn btn-dark mt-2">
                                 Shop Now
                               </Link>
                             </div>
@@ -457,7 +479,7 @@ const Home = () => {
                                 <br />
                                 summer today
                               </p>
-                              <Link to="#" className="btn btn-dark">
+                              <Link to="/Shop" className="btn btn-dark">
                                 Shop Now
                               </Link>
                             </div>
@@ -806,7 +828,7 @@ const Home = () => {
                                 Get Upto <span className="fw-bold">30%</span>{" "}
                                 Off
                               </p>
-                              <Link to="#!" className="btn btn-dark">
+                              <Link to="/Shop" className="btn btn-dark">
                                 Shop Now
                               </Link>
                             </div>
@@ -833,7 +855,7 @@ const Home = () => {
                                 Get Upto <span className="fw-bold">25%</span>{" "}
                                 Off
                               </p>
-                              <Link to="#!" className="btn btn-dark">
+                              <Link to="/Shop" className="btn btn-dark">
                                 Shop Now
                               </Link>
                             </div>
@@ -999,7 +1021,7 @@ const Home = () => {
                           <p className="text-white">
                             Get the best deal before close.
                           </p>
-                          <Link to="#!" className="btn btn-primary">
+                          <Link to="/Shop" className="btn btn-primary">
                             Shop Now{" "}
                             <i className="feather-icon icon-arrow-right ms-1" />
                           </Link>
@@ -1094,24 +1116,13 @@ const Home = () => {
                                     </div>
                                   </div>
                                   <div className="d-grid mt-2">
-                                    <Link to="#!" className="btn btn-primary ">
-                                      <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        width={16}
-                                        height={16}
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth={2}
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        className="feather feather-plus"
-                                      >
-                                        <line x1={12} y1={5} x2={12} y2={19} />
-                                        <line x1={5} y1={12} x2={19} y2={12} />
-                                      </svg>{" "}
-                                      Add to cart{" "}
-                                    </Link>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleHomeAddToCart("Golden Pineapple", 13, bannerdeal)}
+                                      className="btn btn-primary w-100 fw-bold"
+                                    >
+                                      + Add to cart
+                                    </button>
                                   </div>
                                   <div className="d-flex justify-content-start text-center mt-3">
                                     <div
@@ -1208,24 +1219,13 @@ const Home = () => {
                                     </div>
                                   </div>
                                   <div className="d-grid mt-2">
-                                    <Link to="#!" className="btn btn-primary ">
-                                      <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        width={16}
-                                        height={16}
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth={2}
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        className="feather feather-plus"
-                                      >
-                                        <line x1={12} y1={5} x2={12} y2={19} />
-                                        <line x1={5} y1={12} x2={19} y2={12} />
-                                      </svg>{" "}
-                                      Add to cart{" "}
-                                    </Link>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleHomeAddToCart("Golden Pineapple", 13, bannerdeal)}
+                                      className="btn btn-primary w-100 fw-bold"
+                                    >
+                                      + Add to cart
+                                    </button>
                                   </div>
                                   <div className="d-flex justify-content-start text-center mt-3">
                                     <div
@@ -1322,24 +1322,13 @@ const Home = () => {
                                     </div>
                                   </div>
                                   <div className="d-grid mt-2">
-                                    <Link to="#!" className="btn btn-primary ">
-                                      <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        width={16}
-                                        height={16}
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth={2}
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        className="feather feather-plus"
-                                      >
-                                        <line x1={12} y1={5} x2={12} y2={19} />
-                                        <line x1={5} y1={12} x2={19} y2={12} />
-                                      </svg>{" "}
-                                      Add to cart{" "}
-                                    </Link>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleHomeAddToCart("Golden Pineapple", 13, bannerdeal)}
+                                      className="btn btn-primary w-100 fw-bold"
+                                    >
+                                      + Add to cart
+                                    </button>
                                   </div>
                                   <div className="d-flex justify-content-start text-center mt-3">
                                     <div
@@ -1436,24 +1425,13 @@ const Home = () => {
                                     </div>
                                   </div>
                                   <div className="d-grid mt-2">
-                                    <Link to="#!" className="btn btn-primary ">
-                                      <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        width={16}
-                                        height={16}
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth={2}
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        className="feather feather-plus"
-                                      >
-                                        <line x1={12} y1={5} x2={12} y2={19} />
-                                        <line x1={5} y1={12} x2={19} y2={12} />
-                                      </svg>{" "}
-                                      Add to cart{" "}
-                                    </Link>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleHomeAddToCart("Golden Pineapple", 13, bannerdeal)}
+                                      className="btn btn-primary w-100 fw-bold"
+                                    >
+                                      + Add to cart
+                                    </button>
                                   </div>
                                   <div className="d-flex justify-content-start text-center mt-3">
                                     <div

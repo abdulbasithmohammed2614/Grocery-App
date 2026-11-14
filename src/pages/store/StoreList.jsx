@@ -1,1023 +1,158 @@
 import React, { useEffect, useState } from "react";
-import graphics from '../../images/store-graphics.svg'
-import storelogo1 from '../../images/stores-logo-1.svg'
-import storelogo2 from '../../images/stores-logo-2.svg'
-import storelogo3 from '../../images/stores-logo-3.svg'
-import storelogo4 from '../../images/stores-logo-4.svg'
-import storelogo5 from '../../images/stores-logo-5.svg'
-import storelogo6 from '../../images/stores-logo-6.svg'
-import storelogo7 from '../../images/stores-logo-7.svg'
-import storelogo8 from '../../images/stores-logo-8.svg'
-import storeLogo9 from '../../images/stores-logo-9.svg';
-
-import { Slide, Zoom } from "react-awesome-reveal";
-import { MagnifyingGlass } from 'react-loader-spinner'
+import { Link } from "react-router-dom";
+import graphics from "../../images/store-graphics.svg";
 import ScrollToTop from "../ScrollToTop";
-// import storelogo10 from '../images/store'
-// import storelogofrom '../images/store-graphics-2.svg'
-
+import { fetchStoresFromDb } from "../../services/dataService";
 
 const StoreList = () => {
+  const [stores, setStores] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filterTab, setFilterTab] = useState("ALL"); // ALL, QUICK, SUPERMARKET, ORGANIC
 
+  useEffect(() => {
+    let isMounted = true;
+    fetchStoresFromDb().then((data) => {
+      if (isMounted) {
+        setStores(data);
+        setLoading(false);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
-     // loading
-     const [loaderStatus, setLoaderStatus] = useState(true);
-     useEffect(() => {
-       setTimeout(() => {
-         setLoaderStatus(false);
-       }, 1500);
-     }, []);
-   
-  
+  const filteredStores = stores.filter((store) => {
+    if (filterTab === "QUICK") return store.delivery_time.includes("10-15");
+    if (filterTab === "ORGANIC") return store.type.toLowerCase().includes("organic") || store.name.toLowerCase().includes("organic");
+    if (filterTab === "SUPERMARKET") return store.type.toLowerCase().includes("supermarket");
+    return true; // ALL
+  });
+
   return (
     <div>
-       <div>
-      {loaderStatus ? (
-        <div className="loader-container">
-          {/* <PulseLoader loading={loaderStatus} size={50} color="#0aad0a" /> */}
-          <MagnifyingGlass
-  visible={true}
-  height="100"
-  width="100"
-  ariaLabel="magnifying-glass-loading"
-  wrapperStyle={{}}
-  wrapperclassName="magnifying-glass-wrapper"
-  glassColor="#c0efff"
-  color="#0aad0a"
-  />
+      <ScrollToTop />
+
+      {/* Breadcrumb */}
+      <div className="mt-4">
+        <div className="container">
+          <nav aria-label="breadcrumb">
+            <ol className="breadcrumb mb-0">
+              <li className="breadcrumb-item">
+                <Link to="/">Home</Link>
+              </li>
+              <li className="breadcrumb-item active" aria-current="page">
+                Stores
+              </li>
+            </ol>
+          </nav>
         </div>
-      ) : (
-        <>
-         <>
-        <ScrollToTop/>
-        </>
-      <>
-        {/* section*/}
-        <div className="mt-4">
-          <div className="container">
-            {/* row */}
-            <div className="row ">
-              {/* col */}
-              <div className="col-12">
-                {/* breadcrumb */}
-                <nav aria-label="breadcrumb">
-                  <ol className="breadcrumb mb-0">
-                    <li className="breadcrumb-item">
-                      <a href="#!">Home</a>
-                    </li>
-                    <li className="breadcrumb-item">
-                      <a href="#!">Stores</a>
-                    </li>
-                    <li className="breadcrumb-item active" aria-current="page">
-                      Store List
-                    </li>
-                  </ol>
-                </nav>
-              </div>
+      </div>
+
+      {/* Hero Banner */}
+      <section className="mt-4">
+        <div className="container">
+          <div className="bg-light rounded-4 p-4 p-md-5 d-flex justify-content-between align-items-center">
+            <div>
+              <span className="badge bg-success p-2 mb-2">⚡ Blinkit-Style Fast Delivery</span>
+              <h1 className="fw-bold mb-1">Local Grocery Stores</h1>
+              <p className="text-muted mb-0">
+                Discover nearby fulfillment stores delivering fresh groceries in 10-15 minutes.
+              </p>
+            </div>
+            <div className="d-none d-md-block">
+              <img src={graphics} alt="Stores graphics" style={{ maxHeight: "120px" }} />
             </div>
           </div>
         </div>
-      </>
-      <>
-        {/* section */}
-        <section className="mt-8">
-          {/* container */}
-          <div className="container">
-            {/* row */}
-            <div className="row">
-              <div className="col-12">
-                {/* heading */}
-                <div className="bg-light rounded-3 d-flex justify-content-between">
-                  <div className="d-flex align-items-center  p-10">
-                    <Slide direction="down">
-                    <h1 className="mb-0 fw-bold">Stores</h1>
-                    </Slide>
-                  </div>
-                  <div className="p-6">
-                    {/* img */}
-                    {/* img */}
-                    <Zoom>
-                    <img
-                      src={graphics}
-                      alt="graphics"
-                      className="img-fluid"
-                    /></Zoom>
-                  </div>
-                </div>
-              </div>
-            </div>
+      </section>
+
+      {/* Filter Tabs */}
+      <section className="mt-4">
+        <div className="container">
+          <div className="d-flex flex-wrap gap-2 mb-4 pb-2 border-bottom">
+            {[
+              { key: "ALL", label: `All Stores (${stores.length})` },
+              { key: "QUICK", label: "⚡ 10-15 Mins Express" },
+              { key: "SUPERMARKET", label: "🛒 Supermarkets" },
+              { key: "ORGANIC", label: "🌱 Organic & Farm Fresh" },
+            ].map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setFilterTab(tab.key)}
+                className={`btn btn-sm px-3 py-2 rounded-pill fw-semibold ${
+                  filterTab === tab.key ? "btn-dark shadow-sm" : "btn-light text-muted border bg-white"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
           </div>
-        </section>
-      </>
-      <>
-        <section className="mt-6 mb-lg-14 mb-8">
-          {/* container */}
-          <div className="container">
-            {/* row */}
-            <div className="row">
-              <div className="col-12">
-                <div className="mb-4">
-                  {/* title */}
-                  <h6>
-                    We have <span className="text-primary">36</span> vendors now
-                  </h6>
-                </div>
-              </div>
+
+          {/* Store Grid */}
+          {loading ? (
+            <div className="text-center py-5">
+              <div className="spinner-border text-success" role="status"></div>
+              <p className="mt-2 text-muted small">Fetching partner stores from Supabase...</p>
             </div>
-            {/* row */}
-            <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 g-lg-4">
-              {/* col */}
-              <Zoom>
-              <div className="col">
-                {/* card */}
-                <div className="card flex-row p-8 card-product ">
-                  <div>
-                    {/* img */}
-                    <img
-                      src={storelogo1}
-                      alt="stores"
-                      className="rounded-circle icon-shape icon-xl"
-                    />
-                  </div>
-                  {/* content */}
-                  <div className="ms-6">
-                    <h5 className="mb-1">
-                      <a href="#!" className="text-inherit">
-                        E-Grocery Super Market
-                      </a>
-                    </h5>
-                    <div className="small text-muted">
-                      <span>Organic</span>
-                      <span className="mx-1">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width={4}
-                          height={4}
-                          fill="#C1C7C6"
-                          className="bi bi-circle-fill align-middle "
-                          viewBox="0 0 16 16"
-                        >
-                          <circle cx={8} cy={8} r={8} />
-                        </svg>
-                      </span>
-                      <span>Groceries</span>
-                      <span className="mx-1">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width={4}
-                          height={4}
-                          fill="#C1C7C6"
-                          className="bi bi-circle-fill align-middle "
-                          viewBox="0 0 16 16"
-                        >
-                          <circle cx={8} cy={8} r={8} />
-                        </svg>
-                      </span>
-                      <span>Butcher Shop</span>
-                    </div>
-                    <div className="py-3">
-                      <ul className="list-unstyled mb-0 small">
-                        <li>Delivery</li>
-                        <li>Pickup available</li>
-                      </ul>
-                    </div>
-                    <div>
-                      {/* badge */}
-                      <div className="badge text-bg-light border">
-                        7.5 mi away
-                      </div>
-                      {/* badge */}
-                      <div className="badge text-bg-light border">
-                        In-store prices{" "}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              </Zoom>
-              <Zoom>
-              <div className="col">
-                {/* card */}
-                <div className="card flex-row p-8 card-product ">
-                  <div>
-                    {/* img */}
-                    <img
-                      src={storelogo2}
-                      alt="stores"
-                      className="rounded-circle icon-shape icon-xl"
-                    />
-                  </div>
-                  {/* content */}
-                  <div className="ms-6">
-                    <h5 className="mb-1">
-                      <a href="#!" className="text-inherit">
-                        DealShare Mart
-                      </a>
-                    </h5>
-                    <div className="small text-muted">
-                      <span>Alcohol</span>{" "}
-                      <span className="mx-1">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width={4}
-                          height={4}
-                          fill="#C1C7C6"
-                          className="bi bi-circle-fill align-middle "
-                          viewBox="0 0 16 16"
-                        >
-                          <circle cx={8} cy={8} r={8} />
-                        </svg>
-                      </span>
-                      <span>Groceries</span>
-                    </div>
-                    <div className="py-3">
-                      <ul className="list-unstyled mb-0 small">
-                        <li>Delivery</li>
-                        <li>Pickup available</li>
-                      </ul>
-                    </div>
-                    <div>
-                      {/* badge */}
-                      <div className="badge text-bg-light border">
-                        7.2 mi away
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              </Zoom>
-              <Zoom>
-              <div className="col">
-                {/* card */}
-                <div className="card flex-row p-8 card-product ">
-                  <div>
-                    {/* img */}
-                    <img
-                      src={storelogo3}
-                      alt="stores"
-                      className="rounded-circle icon-shape icon-xl"
-                    />
-                  </div>
-                  {/* content */}
-                  <div className="ms-6">
-                    <h5 className="mb-1">
-                      <a href="#!" className="text-inherit">
-                        DMart
-                      </a>
-                    </h5>
-                    <div className="small text-muted">
-                      <span>Groceries</span>
-                      <span className="mx-1">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width={4}
-                          height={4}
-                          fill="#C1C7C6"
-                          className="bi bi-circle-fill align-middle "
-                          viewBox="0 0 16 16"
-                        >
-                          <circle cx={8} cy={8} r={8} />
-                        </svg>
-                      </span>
-                      <span>Bakery</span> <span>Deli</span>
-                    </div>
-                    <div className="py-3">
-                      <ul className="list-unstyled mb-0 small">
-                        <li>
-                          <span className="text-primary">
-                            Delivery by 10:30pm
-                          </span>
-                        </li>
-                        <li>Pickup available</li>
-                      </ul>
-                    </div>
-                    <div>
-                      {/* badge */}
-                      <div className="badge text-bg-light border">
-                        9.3 mi away
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              </Zoom>
-              <Zoom>
-              <div className="col">
-                {/* card */}
-                <div className="card flex-row p-8 card-product ">
-                  <div>
-                    {/* img */}
-                    <img
-                      src={storelogo4}
-                      alt="stores"
-                      className="rounded-circle icon-shape icon-xl"
-                    />
-                  </div>
-                  {/* content */}
-                  <div className="ms-6">
-                    <h5 className="mb-1">
-                      <a href="#!" className="text-inherit">
-                        Blinkit Store
-                      </a>
-                    </h5>
-                    <div className="small text-muted">
-                      <span>Meal Kits</span>
-                      <span className="mx-1">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width={4}
-                          height={4}
-                          fill="#C1C7C6"
-                          className="bi bi-circle-fill align-middle "
-                          viewBox="0 0 16 16"
-                        >
-                          <circle cx={8} cy={8} r={8} />
-                        </svg>
-                      </span>
-                      <span>Prepared Meals</span>
-                      <span className="mx-1">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width={4}
-                          height={4}
-                          fill="#C1C7C6"
-                          className="bi bi-circle-fill align-middle "
-                          viewBox="0 0 16 16"
-                        >
-                          <circle cx={8} cy={8} r={8} />
-                        </svg>
-                      </span>
-                      <span>Organic</span>
-                    </div>
-                    <div className="py-3">
-                      <ul className="list-unstyled mb-0 small">
-                        <li>Delivery</li>
-                        <li>Pickup available</li>
-                      </ul>
-                    </div>
-                    <div>
-                      {/* badge */}
-                      <div className="badge text-bg-light border">
-                        40.5 mi away
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              </Zoom>
-              <Zoom>
-              <div className="col">
-                {/* card */}
-                <div className="card flex-row p-8 card-product ">
-                  <div>
-                    {/* img */}
-                    <img
-                      src={storelogo5}
-                      alt="stores"
-                      className="rounded-circle icon-shape icon-xl"
-                    />
-                  </div>
-                  {/* content */}
-                  <div className="ms-6">
-                    <h5 className="mb-1">
-                      <a href="#!" className="text-inherit">
-                        StoreFront Super Market
-                      </a>
-                    </h5>
-                    <div className="small text-muted">
-                      <span>Groceries</span>
-                      <span className="mx-1">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width={4}
-                          height={4}
-                          fill="#C1C7C6"
-                          className="bi bi-circle-fill align-middle "
-                          viewBox="0 0 16 16"
-                        >
-                          <circle cx={8} cy={8} r={8} />
-                        </svg>
-                      </span>
-                      <span>Bakery</span>
-                    </div>
-                    <div className="py-3">
-                      <ul className="list-unstyled mb-0 small">
-                        <li>
-                          <span className="text-primary">
-                            Delivery by 11:30pm
-                          </span>
-                        </li>
-                        <li>Pickup available</li>
-                      </ul>
-                    </div>
-                    <div>
-                      {/* badge */}
-                      <div className="badge text-bg-light border">
-                        28.1 mi away
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              </Zoom>
-              <Zoom>
-              <div className="col">
-                {/* card */}
-                <div className="card flex-row p-8 card-product ">
-                  <div>
-                    {/* img */}
-                    <img
-                      src={storelogo6}
-                      alt="stores"
-                      className="rounded-circle icon-shape icon-xl"
-                    />
-                  </div>
-                  {/* content */}
-                  <div className="ms-6">
-                    <h5 className="mb-1">
-                      <a href="#!" className="text-inherit">
-                        BigBasket
-                      </a>
-                    </h5>
-                    <div className="small text-muted">
-                      <span>Groceries</span>
-                      <span className="mx-1">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width={4}
-                          height={4}
-                          fill="#C1C7C6"
-                          className="bi bi-circle-fill align-middle "
-                          viewBox="0 0 16 16"
-                        >
-                          <circle cx={8} cy={8} r={8} />
-                        </svg>
-                      </span>
-                      <span>Deli</span>
-                    </div>
-                    <div className="py-3">
-                      <ul className="list-unstyled mb-0 small">
-                        <li>
-                          <span className="text-primary">
-                            Delivery by 10:30pm
-                          </span>
-                        </li>
-                        <li>Pickup available</li>
-                      </ul>
-                    </div>
-                    <div>
-                      {/* badge */}
-                      <div className="badge text-bg-light border">
-                        7.5 mi away
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              </Zoom>
-              <Zoom>
-              <div className="col">
-                {/* card */}
-                <div className="card flex-row p-8 card-product ">
-                  <div>
-                    {/* img */}
-                    <img
-                      src={storelogo7}
-                      alt="stores"
-                      className="rounded-circle icon-shape icon-xl"
-                    />
-                  </div>
-                  {/* content */}
-                  <div className="ms-6">
-                    <h5 className="mb-1">
-                      <a href="#!" className="text-inherit">
-                        Swiggy Instamart
-                      </a>
-                    </h5>
-                    <div className="small text-muted">
-                      <span>Meal Kits</span>
-                      <span className="mx-1">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width={4}
-                          height={4}
-                          fill="#C1C7C6"
-                          className="bi bi-circle-fill align-middle "
-                          viewBox="0 0 16 16"
-                        >
-                          <circle cx={8} cy={8} r={8} />
-                        </svg>
-                      </span>
-                      <span>Prepared Meals</span>
-                      <span className="mx-1">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width={4}
-                          height={4}
-                          fill="#C1C7C6"
-                          className="bi bi-circle-fill align-middle "
-                          viewBox="0 0 16 16"
-                        >
-                          <circle cx={8} cy={8} r={8} />
-                        </svg>
-                      </span>{" "}
-                      <span>Organic</span>
-                    </div>
-                    <div className="py-3">
-                      <ul className="list-unstyled mb-0 small">
-                        <li>Delivery</li>
-                        <li>Pickup available</li>
-                      </ul>
-                    </div>
-                    <div>
-                      {/* badge */}
-                      <div className="badge text-bg-light border">
-                        40.5 mi away
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              </Zoom>
-              <Zoom>
-              <div className="col">
-                {/* card */}
-                <div className="card flex-row p-8 card-product ">
-                  <div>
-                    {/* img */}
-                    <img
-                      src={storelogo8}
-                      alt="stores"
-                      className="rounded-circle icon-shape icon-xl"
-                    />
-                  </div>
-                  {/* content */}
-                  <div className="ms-6">
-                    <h5 className="mb-1">
-                      <a href="#!" className="text-inherit">
-                        Online Grocery Mart
-                      </a>
-                    </h5>
-                    <div className="small text-muted">
-                      <span>Groceries</span>
-                      <span className="mx-1">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width={4}
-                          height={4}
-                          fill="#C1C7C6"
-                          className="bi bi-circle-fill align-middle "
-                          viewBox="0 0 16 16"
-                        >
-                          <circle cx={8} cy={8} r={8} />
-                        </svg>
-                      </span>
-                      <span>Bakery</span>
-                    </div>
-                    <div className="py-3">
-                      <ul className="list-unstyled mb-0 small">
-                        <li>
-                          <span className="text-primary">
-                            Delivery by 11:30pm
-                          </span>
-                        </li>
-                        <li>Pickup available</li>
-                      </ul>
-                    </div>
-                    <div>
-                      {/* badge */}
-                      <div className="badge text-bg-light border">
-                        28.1 mi away
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              </Zoom>
-              <Zoom>
-              <div className="col">
-                {/* card */}
-                <div className="card flex-row p-8 card-product ">
-                  <div>
-                    {/* img */}
-                    <img
-                      src={storeLogo9}
-                      alt="stores"
-                      className="rounded-circle icon-shape icon-xl"
-                    />
-                  </div>
-                  {/* content */}
-                  <div className="ms-6">
-                    <h5 className="mb-1">
-                      <a href="#!" className="text-inherit">
-                        Spencers
-                      </a>
-                    </h5>
-                    <div className="small text-muted">
-                      <span>Groceries</span>
-                      <span className="mx-1">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width={4}
-                          height={4}
-                          fill="#C1C7C6"
-                          className="bi bi-circle-fill align-middle "
-                          viewBox="0 0 16 16"
-                        >
-                          <circle cx={8} cy={8} r={8} />
-                        </svg>
-                      </span>
-                      <span>Deli</span>
-                    </div>
-                    <div className="py-3">
-                      <ul className="list-unstyled mb-0 small">
-                        <li>
-                          <span className="text-primary">
-                            Delivery by 10:30pm
-                          </span>
-                        </li>
-                        <li>Pickup available</li>
-                      </ul>
-                    </div>
-                    <div>
-                      {/* badge */}
-                      <div className="badge text-bg-light border">
-                        7.5 mi away
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              </Zoom>
+          ) : filteredStores.length === 0 ? (
+            <div className="text-center py-5 text-muted">
+              <p>No stores found for this filter.</p>
             </div>
-          </div>
-        </section>
-      </>
-      <>
-        <section className="mb-lg-14 mb-8">
-          <div className="container">
-            <div className="row">
-              <div className="col-12">
-                <div className="mb-6">
-                  <h3 className="mb-0">Recently viewed</h3>
+          ) : (
+            <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mb-5">
+              {filteredStores.map((store) => (
+                <div className="col" key={store.id}>
+                  <div className="card h-100 border-0 shadow-sm rounded-4 p-4 hover-shadow transition-all">
+                    <div className="d-flex align-items-start gap-3">
+                      <img
+                        src={store.logo}
+                        alt={store.name}
+                        className="rounded-circle border p-1"
+                        style={{ width: "60px", height: "60px", objectFit: "contain" }}
+                      />
+                      <div className="flex-grow-1">
+                        <div className="d-flex justify-content-between align-items-center">
+                          <span className="badge bg-success-subtle text-success small fw-semibold">
+                            ⚡ {store.delivery_time}
+                          </span>
+                          <span className="small text-muted">★ {store.rating}</span>
+                        </div>
+                        <h5 className="fw-bold mb-1 mt-1 text-dark">{store.name}</h5>
+                        <small className="text-muted d-block">{store.type}</small>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 pt-3 border-top small text-muted">
+                      <div>📍 {store.location}</div>
+                      <div className="d-flex justify-content-between mt-2">
+                        <span>Min Order: ₹{store.min_order}</span>
+                        <span className="text-success fw-semibold">● {store.status}</span>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 d-flex flex-wrap gap-1">
+                      {Array.isArray(store.tags) &&
+                        store.tags.map((tag, idx) => (
+                          <span key={idx} className="badge bg-light text-muted border small">
+                            {tag}
+                          </span>
+                        ))}
+                    </div>
+
+                    <Link
+                      to="/Shop"
+                      className="btn btn-outline-success btn-sm w-100 mt-3 rounded-pill fw-semibold"
+                    >
+                      Browse Groceries →
+                    </Link>
+                  </div>
                 </div>
-              </div>
+              ))}
             </div>
-            <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3  g-4 g-lg-4">
-            <Zoom>
-              <div className="col">
-                <div className="card flex-row p-8 card-product  ">
-                  <div>
-                    {/* img */}
-                    <img
-                      src={storelogo4}
-                      alt="stores"
-                      className="rounded-circle icon-shape icon-xl"
-                    />
-                  </div>
-                  {/* content */}
-                  <div className="ms-6">
-                    <h5 className="mb-1">
-                      <a href="#!" className="text-inherit">
-                        Blinkit Store
-                      </a>
-                    </h5>
-                    <div className="small text-muted">
-                      <span>Meal Kits</span>
-                      <span className="mx-1">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width={4}
-                          height={4}
-                          fill="#C1C7C6"
-                          className="bi bi-circle-fill align-middle "
-                          viewBox="0 0 16 16"
-                        >
-                          <circle cx={8} cy={8} r={8} />
-                        </svg>
-                      </span>
-                      <span>Prepared Meals</span>
-                      <span className="mx-1">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width={4}
-                          height={4}
-                          fill="#C1C7C6"
-                          className="bi bi-circle-fill align-middle "
-                          viewBox="0 0 16 16"
-                        >
-                          <circle cx={8} cy={8} r={8} />
-                        </svg>
-                      </span>
-                      <span>Organic</span>
-                    </div>
-                    <div className="py-3">
-                      <ul className="list-unstyled mb-0 small">
-                        <li>Delivery</li>
-                        <li>Pickup available</li>
-                      </ul>
-                    </div>
-                    <div>
-                      {/* badge */}
-                      <div className="badge text-bg-light border">
-                        40.5 mi away
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              </Zoom>
-              <Zoom>
-              <div className="col">
-                {/* card */}
-                <div className="card flex-row p-8 card-product ">
-                  <div>
-                    {/* img */}
-                    <img
-                      src={storelogo5}
-                      alt="stores"
-                      className="rounded-circle icon-shape icon-xl"
-                    />
-                  </div>
-                  {/* content */}
-                  <div className="ms-6">
-                    <h5 className="mb-1">
-                      <a href="#!" className="text-inherit">
-                        StoreFront Super Market
-                      </a>
-                    </h5>
-                    <div className="small text-muted">
-                      <span>Groceries</span>
-                      <span className="mx-1">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width={4}
-                          height={4}
-                          fill="#C1C7C6"
-                          className="bi bi-circle-fill align-middle "
-                          viewBox="0 0 16 16"
-                        >
-                          <circle cx={8} cy={8} r={8} />
-                        </svg>
-                      </span>
-                      <span>Bakery</span>
-                    </div>
-                    <div className="py-3">
-                      <ul className="list-unstyled mb-0 small">
-                        <li>
-                          <span className="text-primary">
-                            Delivery by 11:30pm
-                          </span>
-                        </li>
-                        <li>Pickup available</li>
-                      </ul>
-                    </div>
-                    <div>
-                      {/* badge */}
-                      <div className="badge text-bg-light border">
-                        28.1 mi away
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              </Zoom>
-              <Zoom>
-              <div className="col">
-                {/* card */}
-                <div className="card flex-row p-8 card-product ">
-                  <div>
-                    {/* img */}
-                    <img
-                      src={storelogo6}
-                      alt="stores"
-                      className="rounded-circle icon-shape icon-xl"
-                    />
-                  </div>
-                  {/* content */}
-                  <div className="ms-6">
-                    <h5 className="mb-1">
-                      <a href="#!" className="text-inherit">
-                        BigBasket
-                      </a>
-                    </h5>
-                    <div className="small text-muted">
-                      <span>Groceries</span>
-                      <span className="mx-1">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width={4}
-                          height={4}
-                          fill="#C1C7C6"
-                          className="bi bi-circle-fill align-middle "
-                          viewBox="0 0 16 16"
-                        >
-                          <circle cx={8} cy={8} r={8} />
-                        </svg>
-                      </span>
-                      <span>Deli</span>
-                    </div>
-                    <div className="py-3">
-                      <ul className="list-unstyled mb-0 small">
-                        <li>
-                          <span className="text-primary">
-                            Delivery by 10:30pm
-                          </span>
-                        </li>
-                        <li>Pickup available</li>
-                      </ul>
-                    </div>
-                    <div>
-                      {/* badge */}
-                      <div className="badge text-bg-light border">
-                        7.5 mi away
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              </Zoom>
-              <Zoom>
-              <div className="col">
-                {/* card */}
-                <div className="card flex-row p-8 card-product ">
-                  <div>
-                    {/* img */}
-                    <img
-                      src={storelogo7}
-                      alt="stores"
-                      className="rounded-circle icon-shape icon-xl"
-                    />
-                  </div>
-                  {/* content */}
-                  <div className="ms-6">
-                    <h5 className="mb-1">
-                      <a href="#!" className="text-inherit">
-                        Swiggy Instamart
-                      </a>
-                    </h5>
-                    <div className="small text-muted">
-                      <span>Meal Kits</span>
-                      <span className="mx-1">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width={4}
-                          height={4}
-                          fill="#C1C7C6"
-                          className="bi bi-circle-fill align-middle "
-                          viewBox="0 0 16 16"
-                        >
-                          <circle cx={8} cy={8} r={8} />
-                        </svg>
-                      </span>
-                      <span>Prepared Meals</span>
-                      <span className="mx-1">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width={4}
-                          height={4}
-                          fill="#C1C7C6"
-                          className="bi bi-circle-fill align-middle "
-                          viewBox="0 0 16 16"
-                        >
-                          <circle cx={8} cy={8} r={8} />
-                        </svg>
-                      </span>{" "}
-                      <span>Organic</span>
-                    </div>
-                    <div className="py-3">
-                      <ul className="list-unstyled mb-0 small">
-                        <li>Delivery</li>
-                        <li>Pickup available</li>
-                      </ul>
-                    </div>
-                    <div>
-                      {/* badge */}
-                      <div className="badge text-bg-light border">
-                        40.5 mi away
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              </Zoom>
-              <Zoom>
-              <div className="col">
-                {/* card */}
-                <div className="card flex-row p-8 card-product ">
-                  <div>
-                    {/* img */}
-                    <img
-                      src={storelogo8}
-                      alt="stores"
-                      className="rounded-circle icon-shape icon-xl"
-                    />
-                  </div>
-                  {/* content */}
-                  <div className="ms-6">
-                    <h5 className="mb-1">
-                      <a href="#!" className="text-inherit">
-                        Online Grocery Mart
-                      </a>
-                    </h5>
-                    <div className="small text-muted">
-                      <span>Groceries</span>
-                      <span className="mx-1">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width={4}
-                          height={4}
-                          fill="#C1C7C6"
-                          className="bi bi-circle-fill align-middle "
-                          viewBox="0 0 16 16"
-                        >
-                          <circle cx={8} cy={8} r={8} />
-                        </svg>
-                      </span>
-                      <span>Bakery</span>
-                    </div>
-                    <div className="py-3">
-                      <ul className="list-unstyled mb-0 small">
-                        <li>
-                          <span className="text-primary">
-                            Delivery by 11:30pm
-                          </span>
-                        </li>
-                        <li>Pickup available</li>
-                      </ul>
-                    </div>
-                    <div>
-                      {/* badge */}
-                      <div className="badge text-bg-light border">
-                        28.1 mi away
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              </Zoom>
-              <Zoom>
-              <div className="col">
-                {/* card */}
-                <div className="card flex-row p-8 card-product ">
-                  <div>
-                    {/* img */}
-                    <img
-                      src={storeLogo9}
-                      alt="stores"
-                      className="rounded-circle icon-shape icon-xl"
-                    />
-                  </div>
-                  {/* content */}
-                  <div className="ms-6">
-                    <h5 className="mb-1">
-                      <a href="#!" className="text-inherit">
-                        Spencers
-                      </a>
-                    </h5>
-                    <div className="small text-muted">
-                      <span>Groceries</span>
-                      <span className="mx-1">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width={4}
-                          height={4}
-                          fill="#C1C7C6"
-                          className="bi bi-circle-fill align-middle "
-                          viewBox="0 0 16 16"
-                        >
-                          <circle cx={8} cy={8} r={8} />
-                        </svg>
-                      </span>
-                      <span>Deli</span>
-                    </div>
-                    <div className="py-3">
-                      <ul className="list-unstyled mb-0 small">
-                        <li>
-                          <span className="text-primary">
-                            Delivery by 10:30pm
-                          </span>
-                        </li>
-                        <li>Pickup available</li>
-                      </ul>
-                    </div>
-                    <div>
-                      {/* badge */}
-                      <div className="badge text-bg-light border">
-                        7.5 mi away
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              </Zoom>
-            </div>
-          </div>
-        </section>
-      </>
-      </>
-    )}
-  </div>
+          )}
+        </div>
+      </section>
     </div>
   );
 };

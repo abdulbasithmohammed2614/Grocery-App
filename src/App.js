@@ -19,11 +19,17 @@ import Shop from "./pages/Shop/Shop";
 import ShopGridCol3 from "./pages/Shop/ShopGridCol3";
 import ShopListCol from "./pages/Shop/ShopListCol";
 import ShopCart from "./pages/Shop/ShopCart";
-import ShopCheckOut from "./pages/Shop/ShopCheckOut";
+import QuickCheckout from "./pages/Shop/QuickCheckout";
+import OrderTracker from "./pages/Shop/OrderTracker";
 import ShopWishList from "./pages/Shop/ShopWishList";
 // Store pages
 import StoreList from "./pages/store/StoreList";
 import SingleShop from "./pages/store/SingleShop";
+// Seller Portal & Auth
+import SellerDashboard from "./pages/Seller/SellerDashboard";
+import SellerLogin from "./pages/Seller/SellerLogin";
+import CustomerLogin from "./pages/Accounts/CustomerLogin";
+import { SellerRoute } from "./Component/ProtectedRoute";
 // Account pages
 import MyAccountOrder from "./pages/Accounts/MyAccountOrder";
 import MyAccountSetting from "./pages/Accounts/MyAcconutSetting";
@@ -40,13 +46,28 @@ const App = () => {
         <Header/>
         <Routes>
           <Route path="/" element={<Home />} />
-          {/* Shop pages */}
+          {/* Shop & Quick Delivery pages */}
           <Route path="/Shop" element={<Shop />} />
           <Route path="/ShopGridCol3" element={<ShopGridCol3 />} />
           <Route path="/ShopListCol" element={<ShopListCol />} />
           <Route path="/ShopWishList" element={<ShopWishList />} />
-          <Route path="/ShopCheckOut" element={<ShopCheckOut />} />
+          <Route path="/ShopCheckOut" element={<QuickCheckout />} />
+          <Route path="/quick-order" element={<QuickCheckout />} />
+          <Route path="/order-track/:orderId" element={<OrderTracker />} />
           <Route path="/ShopCart" element={<ShopCart />} />
+          {/* Seller / Store Dashboard (Protected: Sellers only) */}
+          <Route path="/seller/login" element={<SellerLogin />} />
+          <Route
+            path="/seller"
+            element={
+              <SellerRoute>
+                <SellerDashboard />
+              </SellerRoute>
+            }
+          />
+          {/* Customer Auth */}
+          <Route path="/customer-login" element={<CustomerLogin />} />
+          <Route path="/MyAccountSignIn" element={<CustomerLogin />} />
           {/* Store pages */}
           <Route path="/StoreList" element={<StoreList />} />
           <Route path="/SingleShop" element={<SingleShop />} />
