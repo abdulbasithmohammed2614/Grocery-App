@@ -1,358 +1,206 @@
-
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Swal from "sweetalert2";
-
 import { useCart } from "../context/CartContext";
-
-import product1 from "../images/category-baby-care.jpg";
-import product2 from "../images/category-atta-rice-dal.jpg";
-import product3 from "../images/category-bakery-biscuits.jpg";
-import product4 from "../images/category-chicken-meat-fish.jpg";
-import product5 from "../images/category-cleaning-essentials.jpg";
-import product6 from "../images/category-dairy-bread-eggs.jpg";
-import product7 from "../images/category-instant-food.jpg";
-import product8 from "../images/category-pet-care.jpg";
-import product9 from "../images/category-snack-munchies.jpg";
-import product10 from "../images/category-tea-coffee-drinks.jpg";
-
-const products = [
-  {
-    id: "popular-1",
-    name: "Haldiram's Sev Bhujia",
-    category: "Snack & Munchies",
-    price: 18,
-    oldPrice: 24,
-    image: product1,
-    rating: 4.5,
-    reviews: 149,
-    badge: "Sale",
-  },
-  {
-    id: "popular-2",
-    name: "NutriChoice Digestive",
-    category: "Bakery & Biscuits",
-    price: 24,
-    image: product2,
-    rating: 4.5,
-    reviews: 25,
-  },
-  {
-    id: "popular-3",
-    name: "Cadbury 5 Star Chocolate",
-    category: "Bakery & Biscuits",
-    price: 32,
-    oldPrice: 35,
-    image: product3,
-    rating: 5,
-    reviews: 469,
-    badge: "14%",
-  },
-  {
-    id: "popular-4",
-    name: "Onion Flavour Potato",
-    category: "Snack & Munchies",
-    price: 3,
-    oldPrice: 5,
-    image: product4,
-    rating: 3.5,
-    reviews: 456,
-    badge: "Hot",
-  },
-  {
-    id: "popular-5",
-    name: "Salted Instant Popcorn",
-    category: "Instant Food",
-    price: 13,
-    oldPrice: 18,
-    image: product5,
-    rating: 4.5,
-    reviews: 120,
-  },
-  {
-    id: "popular-6",
-    name: "Blueberry Greek Yogurt",
-    category: "Dairy, Bread & Eggs",
-    price: 18,
-    oldPrice: 24,
-    image: product6,
-    rating: 4.5,
-    reviews: 85,
-  },
-  {
-    id: "popular-7",
-    name: "Britannia Cheese Slices",
-    category: "Dairy, Bread & Eggs",
-    price: 24,
-    image: product7,
-    rating: 4.5,
-    reviews: 90,
-  },
-  {
-    id: "popular-8",
-    name: "Kellogg's Original Cereals",
-    category: "Instant Food",
-    price: 32,
-    oldPrice: 35,
-    image: product8,
-    rating: 4.5,
-    reviews: 120,
-  },
-  {
-    id: "popular-9",
-    name: "Slurrp Millet Chocolate",
-    category: "Snack & Munchies",
-    price: 3,
-    oldPrice: 5,
-    image: product9,
-    rating: 4,
-    reviews: 65,
-  },
-  {
-    id: "popular-10",
-    name: "Amul Butter - 500 g",
-    category: "Dairy, Bread & Eggs",
-    price: 13,
-    oldPrice: 18,
-    image: product10,
-    rating: 4.5,
-    reviews: 150,
-  },
-];
+import { fetchProductsFromDb, INITIAL_CATEGORIES } from "../services/dataService";
 
 const ProductItem = () => {
-  const {
-    cartItems,
-    addToCart,
-    updateQuantity,
-  } = useCart();
+  const { cartItems, addToCart, updateQuantity } = useCart();
+  const [activeCategory, setActiveCategory] = useState("All");
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    setLoading(true);
+
+    fetchProductsFromDb(activeCategory).then((data) => {
+      if (isMounted) {
+        setProducts(data);
+        setLoading(false);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [activeCategory]);
 
   const handleAddClick = (product) => {
-    addToCart(product);
-
+    addToCart(product, 1);
     Swal.fire({
-      toast: true,
-      position: "top-end",
       icon: "success",
-      title: `${product.name} added to cart`,
+      title: "Added to Cart!",
+      text: `${product.name} has been added.`,
+      timer: 1500,
       showConfirmButton: false,
-      timer: 1800,
-      timerProgressBar: true,
     });
   };
 
   const getCartQuantity = (productId) => {
-    const item = cartItems.find(
-      (cartItem) => cartItem.id === productId
-    );
-
+    const item = cartItems.find((cartItem) => cartItem.id === productId);
     return item ? item.quantity : 0;
   };
 
   return (
     <section className="my-lg-14 my-8">
       <div className="container">
+        {/* Section Header */}
         <div className="row">
-          <div className="col-12 mb-6">
-            <div className="section-head text-center mt-8">
-              <h3
-                className="h3style"
-                data-title="Popular Products"
-              >
-                Popular Products
+          <div className="col-12 mb-4">
+            <div className="section-head text-center mt-6">
+              <h3 className="h3style" data-title="Popular Groceries">
+                Popular Groceries
               </h3>
-
               <div className="wt-separator bg-primarys" />
               <div className="wt-separator2 bg-primarys" />
+              <p className="text-muted small mt-2">
+                ⚡ Delivered in 10-15 Minutes • Sourced Fresh from Store
+              </p>
             </div>
           </div>
         </div>
 
-        <div className="row g-4 row-cols-lg-5 row-cols-2 row-cols-md-3">
-          {products.map((product) => {
-            const quantity = getCartQuantity(product.id);
+        {/* Dynamic Category Tabs Filter */}
+        <div className="d-flex justify-content-center flex-wrap gap-2 mb-5">
+          {INITIAL_CATEGORIES.map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => setActiveCategory(cat.name)}
+              className={`btn btn-sm px-3 py-2 rounded-pill fw-semibold transition-all ${
+                activeCategory === cat.name
+                  ? "btn-success text-white shadow-sm"
+                  : "btn-light text-muted border bg-white"
+              }`}
+              style={{
+                backgroundColor: activeCategory === cat.name ? "#0aad0a" : "#fff",
+                borderColor: activeCategory === cat.name ? "#0aad0a" : "#e0e0e0",
+              }}
+            >
+              {cat.name}
+            </button>
+          ))}
+        </div>
 
-            return (
-              <div className="col fade-zoom" key={product.id}>
-                <div className="card card-product h-100">
-                  <div className="card-body">
-                    <div className="text-center position-relative">
-                      {product.badge && (
-                        <div className="position-absolute top-0 start-0">
-                          <span
-                            className={`badge ${
-                              product.badge === "Hot"
-                                ? "bg-danger"
-                                : product.badge === "Sale"
-                                ? "bg-danger"
-                                : "bg-success"
-                            }`}
-                          >
-                            {product.badge}
-                          </span>
-                        </div>
-                      )}
+        {/* Product Grid */}
+        {loading ? (
+          <div className="text-center py-5">
+            <div className="spinner-border text-success" role="status"></div>
+            <p className="mt-2 text-muted small">Loading fresh groceries from Supabase...</p>
+          </div>
+        ) : products.length === 0 ? (
+          <div className="text-center py-5 text-muted">
+            <p>No products found in "{activeCategory}".</p>
+          </div>
+        ) : (
+          <div className="row g-4 row-cols-lg-4 row-cols-md-3 row-cols-2">
+            {products.map((product) => {
+              const quantity = getCartQuantity(product.id);
 
-                      <img
-                        src={product.image}
-                        alt={product.name}
-                        className="mb-3 img-fluid"
-                      />
-
-                      <div className="card-product-action">
-                        <button
-                          type="button"
-                          className="btn-action"
-                          title="Quick View"
-                          onClick={() =>
-                            Swal.fire({
-                              title: product.name,
-                              text: `Price: ₹${product.price}`,
-                              imageUrl: product.image,
-                              imageWidth: 180,
-                              imageAlt: product.name,
-                              confirmButtonText: "Close",
-                            })
-                          }
-                        >
-                          <i className="bi bi-eye" />
-                        </button>
-
-                        <button
-                          type="button"
-                          className="btn-action"
-                          title="Wishlist"
-                          onClick={() =>
-                            Swal.fire(
-                              "Wishlist",
-                              "Wishlist integration will be implemented next.",
-                              "info"
-                            )
-                          }
-                        >
-                          <i className="bi bi-heart" />
-                        </button>
-
-                        <button
-                          type="button"
-                          className="btn-action"
-                          title="Compare"
-                          onClick={() =>
-                            Swal.fire(
-                              "Compare",
-                              "Product comparison will be implemented later.",
-                              "info"
-                            )
-                          }
-                        >
-                          <i className="bi bi-arrow-left-right" />
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="text-small mb-1">
-                      <span className="text-muted">
-                        <small>{product.category}</small>
-                      </span>
-                    </div>
-
-                    <h2 className="fs-6">
-                      <span className="text-inherit text-decoration-none">
-                        {product.name}
-                      </span>
-                    </h2>
-
-                    <div>
-                      <small className="text-warning">
-                        {Array.from(
-                          { length: 5 },
-                          (_, index) => (
-                            <i
-                              key={index}
-                              className={
-                                index + 1 <= Math.floor(product.rating)
-                                  ? "bi bi-star-fill"
-                                  : index < product.rating
-                                  ? "bi bi-star-half"
-                                  : "bi bi-star"
-                              }
-                            />
-                          )
+              return (
+                <div className="col fade-zoom" key={product.id}>
+                  <div className="card card-product h-100 border rounded-4 shadow-sm">
+                    <div className="card-body p-3 d-flex flex-column justify-content-between">
+                      {/* Badge & Image */}
+                      <div className="text-center position-relative mb-2">
+                        {product.badge && (
+                          <div className="position-absolute top-0 start-0">
+                            <span
+                              className={`badge ${
+                                product.badge === "Hot" || product.badge === "Sale"
+                                  ? "bg-danger"
+                                  : "bg-success"
+                              } rounded-pill px-2 py-1`}
+                            >
+                              {product.badge}
+                            </span>
+                          </div>
                         )}
-                      </small>
 
-                      <span className="text-muted small">
-                        {" "}
-                        {product.rating} ({product.reviews})
-                      </span>
-                    </div>
+                        <img
+                          src={product.image}
+                          alt={product.name}
+                          className="mb-2 img-fluid rounded-3"
+                          style={{ maxHeight: "140px", objectFit: "contain" }}
+                        />
+                      </div>
 
-                    <div className="d-flex justify-content-between align-items-center mt-3">
+                      {/* Content */}
                       <div>
-                        <span className="text-dark">
-                          ₹{product.price}
-                        </span>
+                        <div className="text-small mb-1">
+                          <span className="text-muted small">{product.category}</span>
+                        </div>
 
-                        {product.oldPrice && (
-                          <span className="text-decoration-line-through text-muted ms-2">
-                            ₹{product.oldPrice}
-                          </span>
+                        <h6 className="fw-bold mb-1 text-dark" style={{ minHeight: "40px" }}>
+                          {product.name}
+                        </h6>
+
+                        {product.unit && (
+                          <div className="small text-muted mb-2">
+                            <span>📦 {product.unit}</span>
+                          </div>
                         )}
+
+                        {/* Rating */}
+                        <div className="mb-2">
+                          <small className="text-warning">
+                            {"★".repeat(Math.floor(product.rating || 4))}
+                          </small>
+                          <span className="text-muted small ms-1">
+                            {product.rating || 4.5} ({product.reviews || 50})
+                          </span>
+                        </div>
                       </div>
 
-                      {quantity === 0 ? (
-                        <button
-                          type="button"
-                          className="btn btn-primary btn-sm"
-                          onClick={() => handleAddClick(product)}
-                        >
-                          <i className="bi bi-plus-lg me-1" />
-                          Add
-                        </button>
-                      ) : (
-                        <div
-                          className="d-flex align-items-center border rounded"
-                          style={{ gap: "12px", padding: "4px 8px" }}
-                        >
-                          <button
-                            type="button"
-                            className="btn btn-sm btn-outline-primary"
-                            onClick={() =>
-                              updateQuantity(
-                                product.id,
-                                quantity - 1
-                              )
-                            }
-                            aria-label={`Decrease ${product.name}`}
-                          >
-                            −
-                          </button>
-
-                          <span className="fw-bold">
-                            {quantity}
-                          </span>
-
-                          <button
-                            type="button"
-                            className="btn btn-sm btn-outline-primary"
-                            onClick={() =>
-                              updateQuantity(
-                                product.id,
-                                quantity + 1
-                              )
-                            }
-                            aria-label={`Increase ${product.name}`}
-                          >
-                            +
-                          </button>
+                      {/* Price & Add to Cart */}
+                      <div className="d-flex justify-content-between align-items-center pt-2 border-top mt-2">
+                        <div>
+                          <span className="fw-bold text-dark fs-6">₹{product.price}</span>
+                          {product.old_price && (
+                            <span className="text-decoration-line-through text-muted small ms-2">
+                              ₹{product.old_price}
+                            </span>
+                          )}
                         </div>
-                      )}
+
+                        {quantity === 0 ? (
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-success fw-bold px-3 py-1 rounded-pill"
+                            onClick={() => handleAddClick(product)}
+                            style={{ borderColor: "#0aad0a", color: "#0aad0a" }}
+                          >
+                            + ADD
+                          </button>
+                        ) : (
+                          <div
+                            className="d-flex align-items-center bg-success text-white rounded-pill px-2 py-1"
+                            style={{ backgroundColor: "#0aad0a" }}
+                          >
+                            <button
+                              type="button"
+                              className="btn btn-sm text-white p-0 px-2 fw-bold"
+                              onClick={() => updateQuantity(product.id, quantity - 1)}
+                            >
+                              −
+                            </button>
+                            <span className="fw-bold px-1 small">{quantity}</span>
+                            <button
+                              type="button"
+                              className="btn btn-sm text-white p-0 px-2 fw-bold"
+                              onClick={() => updateQuantity(product.id, quantity + 1)}
+                            >
+                              +
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </section>
   );

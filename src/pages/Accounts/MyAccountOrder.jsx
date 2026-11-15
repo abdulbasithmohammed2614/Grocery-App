@@ -1,525 +1,289 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import "@fortawesome/fontawesome-free/css/all.min.css";
-import productimg1 from "../../images/product-img-1.jpg";
-import productimg2 from "../../images/product-img-2.jpg";
-import productimg3 from "../../images/product-img-3.jpg";
-import productimg4 from "../../images/product-img-4.jpg";
-import productimg5 from "../../images/product-img-5.jpg";
-import productimg6 from "../../images/product-img-6.jpg";
-import { MagnifyingGlass } from "react-loader-spinner";
 import ScrollToTop from "../ScrollToTop";
+import { supabase } from "../../supabaseClient";
+import { useAuth } from "../../context/AuthContext";
+
+const STATUS_BADGES = {
+  RECEIVED: "bg-primary",
+  ACCEPTED: "bg-info text-dark",
+  PACKING: "bg-warning text-dark",
+  OUT_FOR_DELIVERY: "bg-purple text-white",
+  DELIVERED: "bg-success",
+  CANCELLED: "bg-danger",
+};
 
 const MyAccountOrder = () => {
-  // loading
-  const [loaderStatus, setLoaderStatus] = useState(true);
+  const { user, logout } = useAuth();
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    setTimeout(() => {
-      setLoaderStatus(false);
-    }, 1500);
-  }, []);
+    let isMounted = true;
+
+    const loadOrders = async () => {
+      setLoading(true);
+
+      // 1. Try fetching orders from Supabase
+      try {
+        const { data, error } = await supabase
+          .from("orders")
+          .select("*")
+          .order("created_at", { ascending: false })
+          .limit(10);
+
+        if (!error && Array.isArray(data) && data.length > 0) {
+          if (isMounted) {
+            setOrders(data);
+            setLoading(false);
+          }
+          return;
+        }
+      } catch (e) {
+        console.error("Supabase fetch error:", e);
+      }
+
+      // 2. Fallback to localStorage orders
+      try {
+        const local = localStorage.getItem("customer_orders");
+        if (local) {
+          const parsed = JSON.parse(local);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            if (isMounted) {
+              setOrders(parsed);
+              setLoading(false);
+            }
+            return;
+          }
+        }
+      } catch (e) {}
+
+      // 3. Fallback sample demo quick-orders
+      const demoOrders = [
+        {
+          id: "ORD-94281",
+          created_at: new Date(Date.now() - 3600000 * 2).toISOString(),
+          customer_name: user?.name || "Rahul Sharma",
+          item_count: 3,
+          total_amount: 345,
+          order_status: "DELIVERED",
+          payment_method: "ONLINE",
+          delivery_address: "Flat 402, Green Glen Layout, Bangalore",
+        },
+        {
+          id: "ORD-89312",
+          created_at: new Date(Date.now() - 3600000 * 28).toISOString(),
+          customer_name: user?.name || "Rahul Sharma",
+          item_count: 5,
+          total_amount: 520,
+          order_status: "DELIVERED",
+          payment_method: "COD",
+          delivery_address: "Flat 402, Green Glen Layout, Bangalore",
+        },
+      ];
+
+      if (isMounted) {
+        setOrders(demoOrders);
+        setLoading(false);
+      }
+    };
+
+    loadOrders();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user]);
 
   return (
-    <div>
-       <>
-            <ScrollToTop/>
-            </>
-      <>
-        {/* section */}
-        <section>
-          <div className="container">
-            {/* row */}
-            <div className="row">
-              {/* col */}
+    <div className="bg-light py-5" style={{ minHeight: "80vh" }}>
+      <ScrollToTop />
 
-              {/* <div> */}
-              <div className="col-12">
-                <div className="p-6 d-flex justify-content-between align-items-center d-md-none">
-                  {/* heading */}
-                  <h3 className="fs-5 mb-0">Account Setting</h3>
-                  {/* button */}
-                  <button
-                    className="btn btn-outline-gray-400 text-muted d-md-none"
-                    type="button"
-                    data-bs-toggle="offcanvas"
-                    data-bs-target="#offcanvasAccount"
-                    aria-controls="offcanvasAccount"
-                  >
-                    <i className="fas fa-bars"></i>
-                  </button>
-                </div>
-              </div>
-              {/* col */}
-              <div className="col-lg-3 col-md-4 col-12 border-end  d-none d-md-block">
-                <div className="pt-10 pe-lg-10">
-                  {/* nav */}
-                  <ul className="nav flex-column nav-pills nav-pills-dark">
-                    {/* nav item */}
-                    <li className="nav-item">
-                      <Link
-                        className="nav-link active"
-                        aria-current="page"
-                        to="/MyAccountOrder"
-                      >
-                        <i className="fas fa-shopping-bag me-2" />
-                        Your Orders
-                      </Link>
-                    </li>
-                    {/* nav item */}
-                    <li className="nav-item">
-                      <Link className="nav-link" to="/MyAccountSetting">
-                        <i className="fas fa-cog me-2" />
-                        Settings
-                      </Link>
-                    </li>
-                    {/* nav item */}
-                    <li className="nav-item">
-                      <Link className="nav-link" to="/MyAccountAddress">
-                        <i className="fas fa-map-marker-alt me-2" />
-                        Address
-                      </Link>
-                    </li>
-                    {/* nav item */}
-                    <li className="nav-item">
-                      <Link className="nav-link" to="/MyAcconutPaymentMethod">
-                        <i className="fas fa-credit-card me-2" />
-                        Payment Method
-                      </Link>
-                    </li>
-                    {/* nav item */}
-                    <li className="nav-item">
-                      <Link className="nav-link" to="/MyAcconutNotification">
-                        <i className="fas fa-bell me-2" />
-                        Notification
-                      </Link>
-                    </li>
-                    {/* nav item */}
-                    <li className="nav-item">
-                      <hr />
-                    </li>
-                    {/* nav item */}
-                    <li className="nav-item">
-                      <Link className="nav-link " to="/Grocery-react/">
-                        <i className="fas fa-sign-out-alt me-2" />
-                        Log out
-                      </Link>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-              {/* </div> */}
+      <div className="container">
+        {/* Breadcrumb */}
+        <nav aria-label="breadcrumb" className="mb-4">
+          <ol className="breadcrumb">
+            <li className="breadcrumb-item">
+              <Link to="/">Home</Link>
+            </li>
+            <li className="breadcrumb-item">
+              <Link to="/Shop">Shop</Link>
+            </li>
+            <li className="breadcrumb-item active" aria-current="page">
+              My Orders
+            </li>
+          </ol>
+        </nav>
 
-              <div className="col-lg-9 col-md-8 col-12">
-                <div>
-                  {loaderStatus ? (
-                    <div className="loader-container">
-                      {/* <PulseLoader loading={loaderStatus} size={50} color="#0aad0a" /> */}
-                      <MagnifyingGlass
-                        visible={true}
-                        height="100"
-                        width="100"
-                        ariaLabel="magnifying-glass-loading"
-                        wrapperStyle={{}}
-                        wrapperclassName="magnifying-glass-wrapper"
-                        glassColor="#c0efff"
-                        color="#0aad0a"
-                      />
-                    </div>
-                  ) : (
-                    <>
-                      <div className="p-6 p-lg-10">
-                        {/* heading */}
-                        <h2 className="mb-6">Your Orders</h2>
-                        <div className="table-responsive border-0">
-                          {/* Table */}
-                          <table className="table mb-0 text-nowrap">
-                            {/* Table Head */}
-                            <thead className="table-light">
-                              <tr>
-                                <th className="border-0">&nbsp;</th>
-                                <th className="border-0">Product</th>
-                                <th className="border-0">Order</th>
-                                <th className="border-0">Date</th>
-                                <th className="border-0">Items</th>
-                                <th className="border-0">Status</th>
-                                <th className="border-0">Amount</th>
-                                <th className="border-0" />
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {/* Table body */}
-                              <tr>
-                                <td className="align-middle border-top-0 w-0">
-                                  <Link to="#">
-                                    {" "}
-                                    <img
-                                      src={productimg1}
-                                      alt="Ecommerce"
-                                      className="icon-shape icon-xl"
-                                    />
-                                  </Link>
-                                </td>
-                                <td className="align-middle border-top-0">
-                                  <Link
-                                    to="#"
-                                    className="fw-semi-bold text-inherit"
-                                  >
-                                    <h6 className="mb-0">
-                                      Haldiram's Nagpur Aloo Bhujia
-                                    </h6>
-                                  </Link>
-                                  <span>
-                                    <small className="text-muted">400g</small>
-                                  </span>
-                                </td>
-                                <td className="align-middle border-top-0">
-                                  <Link to="#" className="text-inherit">
-                                    #14899
-                                  </Link>
-                                </td>
-                                <td className="align-middle border-top-0">
-                                  March 5, 2023
-                                </td>
-                                <td className="align-middle border-top-0">1</td>
-                                <td className="align-middle border-top-0">
-                                  <span className="badge bg-warning">
-                                    Processing
-                                  </span>
-                                </td>
-                                <td className="align-middle border-top-0">
-                                  $15.00
-                                </td>
-                                <td className="text-muted align-middle border-top-0">
-                                  <Link to="#" className="text-inherit">
-                                    <i className="feather-icon icon-eye" />
-                                  </Link>
-                                </td>
-                              </tr>
-                              <tr>
-                                <td className="align-middle border-top-0 w-0">
-                                  <Link to="#">
-                                    {" "}
-                                    <img
-                                      src={productimg2}
-                                      alt="Ecommerce"
-                                      className="icon-shape icon-xl"
-                                    />
-                                  </Link>
-                                </td>
-                                <td className="align-middle border-top-0">
-                                  <Link
-                                    to="#"
-                                    className="fw-semi-bold text-inherit"
-                                  >
-                                    <h6 className="mb-0">
-                                      Nutri Choise Biscuit
-                                    </h6>
-                                  </Link>
-                                  <span>
-                                    <small className="text-muted">2 Pkt</small>
-                                  </span>
-                                </td>
-                                <td className="align-middle border-top-0">
-                                  <Link to="#" className="text-inherit">
-                                    #14658
-                                  </Link>
-                                </td>
-                                <td className="align-middle border-top-0">
-                                  July 9, 2023
-                                </td>
-                                <td className="align-middle border-top-0">2</td>
-                                <td className="align-middle border-top-0">
-                                  <span className="badge bg-success">
-                                    Completed
-                                  </span>
-                                </td>
-                                <td className="align-middle border-top-0">
-                                  $45.00
-                                </td>
-                                <td className="text-muted align-middle border-top-0">
-                                  <Link to="#" className="text-inherit">
-                                    <i className="feather-icon icon-eye" />
-                                  </Link>
-                                </td>
-                              </tr>
-                              <tr>
-                                <td className="align-middle border-top-0 w-0">
-                                  <Link to="#">
-                                    {" "}
-                                    <img
-                                      src={productimg3}
-                                      alt="Ecommerce"
-                                      className="icon-shape icon-xl"
-                                    />
-                                  </Link>
-                                </td>
-                                <td className="align-middle border-top-0">
-                                  <Link to="#" className="text-inherit">
-                                    <h6 className="mb-0">
-                                      Cadbury Dairy Milk 5 Star Bites{" "}
-                                    </h6>
-                                    <span>
-                                      <small className="text-muted">
-                                        202 g
-                                      </small>
-                                    </span>
-                                  </Link>
-                                </td>
-                                <td className="align-middle border-top-0">
-                                  <Link to="#" className="text-inherit">
-                                    #13778
-                                  </Link>
-                                </td>
-                                <td className="align-middle border-top-0">
-                                  Oct 03, 2023
-                                </td>
-                                <td className="align-middle border-top-0">4</td>
-                                <td className="align-middle border-top-0">
-                                  <span className="badge bg-success">
-                                    Completed
-                                  </span>
-                                </td>
-                                <td className="align-middle border-top-0">
-                                  $99.00
-                                </td>
-                                <td className="text-muted align-middle border-top-0">
-                                  <Link to="#" className="text-inherit">
-                                    <i className="feather-icon icon-eye" />
-                                  </Link>
-                                </td>
-                              </tr>
-                              <tr>
-                                <td className="align-middle border-top-0 w-0">
-                                  <Link to="#">
-                                    {" "}
-                                    <img
-                                      src={productimg4}
-                                      alt="Ecommerce"
-                                      className="icon-shape icon-xl"
-                                    />
-                                  </Link>
-                                </td>
-                                <td className="align-middle border-top-0">
-                                  <Link
-                                    to="#"
-                                    className="fw-semi-bold text-inherit"
-                                  >
-                                    <h6 className="mb-0">
-                                      Onion Flavour Potato{" "}
-                                    </h6>
-                                  </Link>
-                                  <span>
-                                    <small className="text-muted">100 g</small>
-                                  </span>
-                                </td>
-                                <td className="align-middle border-top-0">
-                                  <Link to="#" className="text-inherit">
-                                    #13746
-                                  </Link>
-                                </td>
-                                <td className="align-middle border-top-0">
-                                  March 5, 2023
-                                </td>
-                                <td className="align-middle border-top-0">1</td>
-                                <td className="align-middle border-top-0">
-                                  <span className="badge bg-success">
-                                    Completed
-                                  </span>
-                                </td>
-                                <td className="align-middle border-top-0">
-                                  $12.00
-                                </td>
-                                <td className="text-muted align-middle border-top-0">
-                                  <Link to="#" className="text-inherit">
-                                    <i className="feather-icon icon-eye" />
-                                  </Link>
-                                </td>
-                              </tr>
-                              <tr>
-                                <td className="align-middle border-top-0 w-0">
-                                  <Link to="#">
-                                    {" "}
-                                    <img
-                                      src={productimg5}
-                                      alt="Ecommerce"
-                                      className="icon-shape icon-xl"
-                                    />
-                                  </Link>
-                                </td>
-                                <td className="align-middle border-top-0">
-                                  <Link
-                                    to="#"
-                                    className="fw-semi-bold text-inherit"
-                                  >
-                                    <h6 className="mb-0">
-                                      Salted Instant Popcorn{" "}
-                                    </h6>
-                                  </Link>
-                                  <span>
-                                    <small className="text-muted">500 g</small>
-                                  </span>
-                                </td>
-                                <td className="align-middle border-top-0">
-                                  <Link to="#" className="text-inherit">
-                                    #13566
-                                  </Link>
-                                </td>
-                                <td className="align-middle border-top-0">
-                                  July 9, 2023
-                                </td>
-                                <td className="align-middle border-top-0">2</td>
-                                <td className="align-middle border-top-0">
-                                  <span className="badge bg-danger">
-                                    Cancel
-                                  </span>
-                                </td>
-                                <td className="align-middle border-top-0">
-                                  $6.00
-                                </td>
-                                <td className="text-muted align-middle border-top-0">
-                                  <Link to="#" className="text-inherit">
-                                    <i className="feather-icon icon-eye" />
-                                  </Link>
-                                </td>
-                              </tr>
-                              <tr>
-                                <td className="align-middle border-top-0 w-0">
-                                  <Link to="#">
-                                    {" "}
-                                    <img
-                                      src={productimg6}
-                                      alt="Ecommerce"
-                                      className="icon-shape icon-xl"
-                                    />
-                                  </Link>
-                                </td>
-                                <td className="align-middle border-top-0">
-                                  <Link
-                                    to="#"
-                                    className="fw-semi-bold text-inherit"
-                                  >
-                                    <h6 className="mb-0">
-                                      Blueberry Greek Yogurt{" "}
-                                    </h6>
-                                  </Link>
-                                  <span>
-                                    <small className="text-muted">500 g</small>
-                                  </span>
-                                </td>
-                                <td className="align-middle border-top-0">
-                                  <Link to="#" className="text-inherit">
-                                    #12094
-                                  </Link>
-                                </td>
-                                <td className="align-middle border-top-0">
-                                  Oct 03, 2023
-                                </td>
-                                <td className="align-middle border-top-0">4</td>
-                                <td className="align-middle border-top-0">
-                                  <span className="badge bg-success">
-                                    Completed
-                                  </span>
-                                </td>
-                                <td className="align-middle border-top-0">
-                                  $18.00
-                                </td>
-                                <td className="text-muted align-middle border-top-0">
-                                  <Link to="#" className="text-inherit">
-                                    <i className="feather-icon icon-eye" />
-                                  </Link>
-                                </td>
-                              </tr>
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-                    </>
-                  )}
+        <div className="row g-4">
+          {/* Sidebar */}
+          <div className="col-lg-3">
+            <div className="card border-0 shadow-sm rounded-4 p-4 bg-white">
+              <div className="text-center mb-4">
+                <div
+                  className="rounded-circle bg-success text-white d-flex align-items-center justify-content-center mx-auto mb-2 fw-bold fs-4"
+                  style={{ width: "65px", height: "65px" }}
+                >
+                  {user?.name ? user.name[0].toUpperCase() : "G"}
                 </div>
+                <h5 className="fw-bold mb-0">{user?.name || "Guest Customer"}</h5>
+                <small className="text-muted">{user?.email || "customer@example.com"}</small>
               </div>
-            </div>
-          </div>
-        </section>
-      </>
-      <>
-        {/* modal */}
-        <div
-          className="offcanvas offcanvas-start"
-          tabIndex={-1}
-          id="offcanvasAccount"
-          aria-labelledby="offcanvasAccountLabel"
-        >
-          {/* offcanvas header */}
-          <div className="offcanvas-header">
-            <h5 className="offcanvas-title" id="offcanvasAccountLabel">
-              My Account
-            </h5>
-            <button
-              type="button"
-              className="btn-close"
-              data-bs-dismiss="offcanvas"
-              aria-label="Close"
-            />
-          </div>
-          {/* offcanvas body */}
-          <div className="offcanvas-body">
-            <ul className="nav flex-column nav-pills nav-pills-dark">
-              {/* nav item */}
-              <li className="nav-item">
-                <a
-                  className="nav-link active"
-                  aria-current="page"
-                  href="/MyAccountOrder"
+
+              <div className="list-group list-group-flush border-0">
+                <Link
+                  to="/MyAccountOrder"
+                  className="list-group-item list-group-item-action border-0 px-3 py-2 rounded-3 active bg-success fw-semibold mb-1"
                 >
                   <i className="fas fa-shopping-bag me-2" />
                   Your Orders
-                </a>
-              </li>
-              {/* nav item */}
-              <li className="nav-item">
-                <a className="nav-link " href="/MyAccountSetting">
-                  <i className="fas fa-cog me-2" />
-                  Settings
-                </a>
-              </li>
-              {/* nav item */}
-              <li className="nav-item">
-                <a className="nav-link" href="/MyAccountAddress">
-                  <i className="fas fa-map-marker-alt me-2" />
-                  Address
-                </a>
-              </li>
-              {/* nav item */}
-              <li className="nav-item">
-                <a className="nav-link" href="/MyAcconutPaymentMethod">
-                  <i className="fas fa-credit-card me-2" />
-                  Payment Method
-                </a>
-              </li>
-              {/* nav item */}
-              <li className="nav-item">
-                <a className="nav-link" href="/MyAcconutNotification">
-                  <i className="fas fa-bell me-2" />
-                  Notification
-                </a>
-              </li>
-            </ul>
-            <hr className="my-6" />
-            <div>
-              {/* nav  */}
-              <ul className="nav flex-column nav-pills nav-pills-dark">
-                {/* nav item */}
-                <li className="nav-item">
-                  <a className="nav-link " href="/Grocery-react/">
+                </Link>
+                <Link
+                  to="/ShopWishList"
+                  className="list-group-item list-group-item-action border-0 px-3 py-2 rounded-3 mb-1"
+                >
+                  <i className="fas fa-heart me-2 text-danger" />
+                  My Wishlist
+                </Link>
+                <Link
+                  to="/Shop"
+                  className="list-group-item list-group-item-action border-0 px-3 py-2 rounded-3 mb-1"
+                >
+                  <i className="fas fa-store me-2 text-success" />
+                  Browse Groceries
+                </Link>
+                <Link
+                  to="/quick-order"
+                  className="list-group-item list-group-item-action border-0 px-3 py-2 rounded-3 mb-1"
+                >
+                  <i className="fas fa-bolt me-2 text-warning" />
+                  Quick Checkout
+                </Link>
+                {user && (
+                  <button
+                    onClick={logout}
+                    className="list-group-item list-group-item-action border-0 px-3 py-2 rounded-3 text-danger fw-semibold mt-3"
+                  >
                     <i className="fas fa-sign-out-alt me-2" />
-                    Log out
-                  </a>
-                </li>
-              </ul>
+                    Sign Out
+                  </button>
+                )}
+              </div>
             </div>
           </div>
+
+          {/* Orders Listing */}
+          <div className="col-lg-9">
+            <div className="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
+              <div className="d-flex justify-content-between align-items-center">
+                <div>
+                  <h3 className="fw-bold mb-1">Your Orders &amp; Deliveries</h3>
+                  <p className="text-muted small mb-0">
+                    Track live deliveries or review your order history.
+                  </p>
+                </div>
+                <Link to="/Shop" className="btn btn-outline-success btn-sm rounded-pill px-3 fw-bold">
+                  + Order More
+                </Link>
+              </div>
+            </div>
+
+            {loading ? (
+              <div className="card border-0 shadow-sm rounded-4 p-5 text-center bg-white">
+                <div className="spinner-border text-success" role="status"></div>
+                <p className="mt-3 text-muted small">Loading order history...</p>
+              </div>
+            ) : orders.length === 0 ? (
+              <div className="card border-0 shadow-sm rounded-4 p-5 text-center bg-white">
+                <span className="fs-1 d-block mb-3">📦</span>
+                <h4 className="fw-bold">No orders placed yet</h4>
+                <p className="text-muted small">
+                  Place your first order to get fresh groceries delivered in 10-15 minutes!
+                </p>
+                <div className="mt-3">
+                  <Link to="/Shop" className="btn btn-success px-4 rounded-pill fw-semibold">
+                    Start Shopping →
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              <div className="card border-0 shadow-sm rounded-4 p-3 bg-white">
+                <div className="table-responsive">
+                  <table className="table align-middle table-hover mb-0">
+                    <thead className="table-light">
+                      <tr>
+                        <th scope="col">Order ID</th>
+                        <th scope="col">Placed On</th>
+                        <th scope="col">Items</th>
+                        <th scope="col">Payment</th>
+                        <th scope="col">Total</th>
+                        <th scope="col">Status</th>
+                        <th scope="col" className="text-center">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {orders.map((order) => {
+                        const dateStr = order.created_at
+                          ? new Date(order.created_at).toLocaleDateString("en-IN", {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })
+                          : "Recently";
+
+                        const statusBadge =
+                          STATUS_BADGES[order.order_status] || "bg-secondary";
+
+                        return (
+                          <tr key={order.id}>
+                            <td>
+                              <span className="fw-bold text-dark">{order.id}</span>
+                            </td>
+                            <td>
+                              <small className="text-muted">{dateStr}</small>
+                            </td>
+                            <td>
+                              <span className="badge bg-light text-dark border">
+                                {order.item_count || 1} item(s)
+                              </span>
+                            </td>
+                            <td>
+                              <span className="small text-muted fw-semibold">
+                                {order.payment_method || "COD"}
+                              </span>
+                            </td>
+                            <td>
+                              <span className="fw-bold text-dark">
+                                ₹{order.total_amount || 0}
+                              </span>
+                            </td>
+                            <td>
+                              <span className={`badge ${statusBadge} px-2 py-1`}>
+                                {order.order_status}
+                              </span>
+                            </td>
+                            <td className="text-center">
+                              <Link
+                                to={`/order-track/${order.id}`}
+                                className="btn btn-sm btn-outline-success rounded-pill px-3 fw-bold"
+                              >
+                                ⚡ Track Order
+                              </Link>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
-      </>
+      </div>
     </div>
   );
 };

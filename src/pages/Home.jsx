@@ -41,17 +41,39 @@ import product8 from "../images/category-pet-care.jpg";
 import product9 from "../images/category-snack-munchies.jpg";
 import product10 from "../images/category-tea-coffee-drinks.jpg";
 import { Link } from "react-router-dom";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import Swal from "sweetalert2";
+import { useCart } from "../context/CartContext";
 import ProductItem from "../ProductList/ProductItem";
 import Slider from "react-slick";
 // import "slick-carousel/slick/slick.css";
 // import "slick-carousel/slick/slick-theme.css";
 import { Slide, Zoom } from "react-awesome-reveal";
-import { useEffect } from "react";
 // import { PulseLoader } from 'react-spinners';
 import { MagnifyingGlass } from "react-loader-spinner";
 const Home = () => {
+  const { addToCart } = useCart();
   const [isVisible, setIsVisible] = useState(false);
+
+  const handleHomeAddToCart = (name, price, img) => {
+    addToCart(
+      {
+        id: `home-${name.replace(/\s+/g, "-").toLowerCase()}`,
+        title: name,
+        name: name,
+        price: Number(price),
+        image: img,
+      },
+      1
+    );
+    Swal.fire({
+      icon: "success",
+      title: "Added to Cart!",
+      text: `${name} has been added to your basket.`,
+      timer: 1500,
+      showConfirmButton: false,
+    });
+  };
 
   const toggleVisibility = () => {
     if (window.pageYOffset > 300) {
@@ -259,7 +281,7 @@ const Home = () => {
                               Introduced a new model for online grocery shopping
                               and convenient home delivery.
                             </p>
-                            <Link to="#!" className="btn btn-dark mt-3">
+                            <Link to="/Shop" className="btn btn-dark mt-3">
                               Shop Now{" "}
                               <i className="feather-icon icon-arrow-right ms-1" />
                             </Link>
@@ -287,7 +309,7 @@ const Home = () => {
                               Free Shipping to First-Time Customers Only, After
                               promotions and discounts are applied.
                             </p>
-                            <Link to="#!" className="btn btn-dark mt-3">
+                            <Link to="/Shop" className="btn btn-dark mt-3">
                               Shop Now{" "}
                               <i className="feather-icon icon-arrow-right ms-1" />
                             </Link>
@@ -396,7 +418,7 @@ const Home = () => {
                                   </span>
                                 </span>
                               </div>
-                              <Link to="#" className="btn btn-dark">
+                              <Link to="/Shop" className="btn btn-dark">
                                 Shop Now
                               </Link>
                             </div>
@@ -427,7 +449,7 @@ const Home = () => {
                                 Refresh your day <br />
                                 the fruity way
                               </p>
-                              <Link to="#" className="btn btn-dark mt-2">
+                              <Link to="/Shop" className="btn btn-dark mt-2">
                                 Shop Now
                               </Link>
                             </div>
@@ -457,7 +479,7 @@ const Home = () => {
                                 <br />
                                 summer today
                               </p>
-                              <Link to="#" className="btn btn-dark">
+                              <Link to="/Shop" className="btn btn-dark">
                                 Shop Now
                               </Link>
                             </div>
@@ -491,292 +513,45 @@ const Home = () => {
                         </div>
                       </div>
                     </div>
-                    <div className="row ">
-                      {/* col */}
-                      <div className="col-lg-2 col-md-4 col-6 fade-zoom">
-                        <Zoom>
-                          <div className="text-center mb-10">
-                            {/* img */}
-                            <Link to="#">
-                              <img
-                                src={dairybreadeggs}
-                                alt="dairy-bread-eggs"
-                                className="card-image rounded-circle"
-                              />
-                            </Link>
-                            {/* text */}
-                            <div className="mt-4">
-                              <h5 className="fs-6 mb-0">
-                                {" "}
-                                <Link to="#" className="text-inherit">
-                                  Dairy, Bread &amp; Eggs
-                                </Link>
-                              </h5>
+                    <div className="row g-4">
+                      {[
+                        { name: "Dairy, Bread & Eggs", img: dairybreadeggs },
+                        { name: "Fruits & Vegetables", img: fruitsvegetables },
+                        { name: "Snacks & Munchies", img: snackmunchies },
+                        { name: "Bakery & Biscuits", img: bakerybiscuits },
+                        { name: "Instant Food", img: instantfood },
+                        { name: "Tea, Coffee & Drinks", img: teacoffeedrinks },
+                        { name: "Cold Drinks & Juices", img: colddrinksjuices },
+                        { name: "Chicken, Meat & Fish", img: chickenmeatfish },
+                        { name: "Baby Care", img: babycare },
+                        { name: "Cleaning Essentials", img: cleaningessentials },
+                        { name: "Pet Care", img: petcare },
+                        { name: "Atta, Rice & Dal", img: attaricedal },
+                      ].map((cat, idx) => (
+                        <div className="col-lg-2 col-md-4 col-6 fade-zoom" key={idx}>
+                          <Zoom>
+                            <div className="text-center mb-4">
+                              <Link
+                                to={`/Shop?category=${encodeURIComponent(cat.name)}`}
+                                className="text-decoration-none"
+                              >
+                                <img
+                                  src={cat.img}
+                                  alt={cat.name}
+                                  className="card-image rounded-circle border p-2 shadow-sm hover-shadow transition-all"
+                                  style={{ width: "95px", height: "95px", objectFit: "contain" }}
+                                />
+                                <div className="mt-3">
+                                  <h6 className="fs-6 mb-0 text-dark fw-semibold text-truncate">
+                                    {cat.name}
+                                  </h6>
+                                  <small className="text-success fw-bold">Shop Now →</small>
+                                </div>
+                              </Link>
                             </div>
-                          </div>
-                        </Zoom>
-                      </div>
-                      {/* col */}
-                      <div className="col-lg-2 col-md-4 col-6 fade-zoom">
-                        <Zoom>
-                          <div className="text-center mb-10">
-                            {/* img */}
-                            <Link to="#">
-                              <img
-                                src={fruitsvegetables}
-                                alt="fruits-vegetables"
-                                className="card-image rounded-circle"
-                              />
-                            </Link>
-                            <div className="mt-4">
-                              {/* text */}
-                              <h5 className="fs-6 mb-0">
-                                {" "}
-                                <Link to="#" className="text-inherit">
-                                  Fruits &amp; Vegetables
-                                </Link>
-                              </h5>
-                            </div>
-                          </div>
-                        </Zoom>
-                      </div>
-                      {/* col */}
-                      <div className="col-lg-2 col-md-4 col-6 fade-zoom">
-                        <Zoom>
-                          <div className="text-center mb-10">
-                            {/* img */}
-                            <Link to="#">
-                              <img
-                                src={snackmunchies}
-                                alt="snack-munchies"
-                                className="card-image rounded-circle"
-                              />
-                            </Link>
-                            {/* text */}
-                            <div className="mt-4">
-                              <h5 className="fs-6 mb-0">
-                                {" "}
-                                <Link to="#" className="text-inherit">
-                                  Snack &amp; Munchies
-                                </Link>
-                              </h5>
-                            </div>
-                          </div>
-                        </Zoom>
-                      </div>
-                      {/* col */}
-                      <div className="col-lg-2 col-md-4 col-6 fade-zoom">
-                        <Zoom>
-                          <div className="text-center mb-10">
-                            {/* img */}
-                            <Link to="#">
-                              <img
-                                src={bakerybiscuits}
-                                alt="bakery-biscuits"
-                                className="card-image rounded-circle"
-                              />
-                            </Link>
-                            {/* text */}
-                            <div className="mt-4">
-                              <h5 className="fs-6 mb-0">
-                                {" "}
-                                <Link to="#" className="text-inherit">
-                                  Bakery &amp; Biscuits
-                                </Link>
-                              </h5>
-                            </div>
-                          </div>
-                        </Zoom>
-                      </div>
-                      {/* col */}
-                      <div className="col-lg-2 col-md-4 col-6 fade-zoom">
-                        <Zoom>
-                          <div className="text-center mb-10">
-                            {/* img */}
-                            <Link to="#">
-                              <img
-                                src={instantfood}
-                                alt="instant-food"
-                                className="card-image rounded-circle"
-                              />
-                            </Link>
-                            {/* text */}
-                            <div className="mt-4">
-                              <h5 className="fs-6 mb-0">
-                                {" "}
-                                <Link to="#" className="text-inherit">
-                                  Instant Food
-                                </Link>
-                              </h5>
-                            </div>
-                          </div>
-                        </Zoom>
-                      </div>
-                      {/* col */}
-                      <div className="col-lg-2 col-md-4 col-6 fade-zoom">
-                        <Zoom>
-                          <div className="text-center mb-10">
-                            {/* img */}
-                            <Link to="#">
-                              <img
-                                src={teacoffeedrinks}
-                                alt="tea-coffee-drinks"
-                                className="card-image rounded-circle"
-                              />
-                            </Link>
-                            {/* text */}
-                            <div className="mt-4">
-                              <h5 className="fs-6 mb-0">
-                                <Link to="#" className="text-inherit">
-                                  Tea, Coffee &amp; Drinks
-                                </Link>
-                              </h5>
-                            </div>
-                          </div>
-                        </Zoom>
-                      </div>
-                      {/* col */}
-                      <div className="col-lg-2 col-md-4 col-6 fade-zoom">
-                        <Zoom>
-                          <div className="text-center mb-10">
-                            {/* img */}
-                            <Link to="#">
-                              <img
-                                src={colddrinksjuices}
-                                alt="cold-drinks-juices"
-                                className="card-image rounded-circle"
-                              />
-                            </Link>
-                            {/* text */}
-                            <div className="mt-4">
-                              <h5 className="fs-6 mb-0">
-                                <Link to="#" className="text-inherit">
-                                  Cold Drinks &amp; Juices
-                                </Link>
-                              </h5>
-                            </div>
-                          </div>
-                        </Zoom>
-                      </div>
-                      {/* col */}
-                      <div className="col-lg-2 col-md-4 col-6 fade-zoom">
-                        <Zoom>
-                          <div className="text-center mb-10">
-                            {/* img */}
-                            <Link to="#">
-                              <img
-                                src={chickenmeatfish}
-                                alt="chicken-meat-fish"
-                                className="card-image rounded-circle"
-                              />
-                            </Link>
-                            {/* text */}
-                            <div className="mt-4">
-                              <h5 className="fs-6 mb-0">
-                                <Link to="#" className="text-inherit">
-                                  Chicken, Meat &amp; Fish
-                                </Link>
-                              </h5>
-                            </div>
-                          </div>
-                        </Zoom>
-                      </div>
-                      {/* col */}
-                      <div className="col-lg-2 col-md-4 col-6 fade-zoom">
-                        {/* text */}
-                        <Zoom>
-                          <div className="text-center mb-10">
-                            {/* img */}
-                            <Link to="#">
-                              <img
-                                src={babycare}
-                                alt="baby-care"
-                                className="card-image rounded-circle"
-                              />
-                            </Link>
-                            {/* text */}
-                            <div className="mt-4">
-                              <h5 className="fs-6 mb-0">
-                                {" "}
-                                <Link to="#" className="text-inherit">
-                                  Baby Care
-                                </Link>
-                              </h5>
-                            </div>
-                          </div>
-                        </Zoom>
-                      </div>
-                      {/* col */}
-                      <div className="col-lg-2 col-md-4 col-6 fade-zoom">
-                        <Zoom>
-                          <div className="text-center mb-10">
-                            {/* img */}
-                            <Link to="#">
-                              <img
-                                src={cleaningessentials}
-                                alt="cleaning-essentials"
-                                className="card-image rounded-circle"
-                              />
-                            </Link>
-                            {/* img */}
-                            <div className="mt-4">
-                              <h5 className="fs-6 mb-0">
-                                {" "}
-                                <Link to="#" className="text-inherit">
-                                  Cleaning Essentials
-                                </Link>
-                              </h5>
-                            </div>
-                          </div>
-                        </Zoom>
-                      </div>
-                      {/* col */}
-                      <div className="col-lg-2 col-md-4 col-6 fade-zoom">
-                        <Zoom>
-                          <div className="text-center mb-10">
-                            {/* img */}
-                            <Link to="#">
-                              <img
-                                src={petcare}
-                                alt="pet-care"
-                                className="card-image rounded-circle"
-                              />
-                            </Link>
-                            {/* text */}
-                            <div className="mt-4">
-                              <h5 className="fs-6 mb-0">
-                                {" "}
-                                <Link to="#" className="text-inherit">
-                                  Pet Care
-                                </Link>
-                              </h5>
-                            </div>
-                          </div>
-                        </Zoom>
-                      </div>
-                      {/* col */}
-                      <div className="col-lg-2 col-md-4 col-6 fade-zoom">
-                        <Zoom>
-                          <div className="text-center mb-10">
-                            {/* img */}
-                            <Link to="#">
-                              <img
-                                src={attaricedal}
-                                alt="atta-rice-dal"
-                                className="card-image rounded-circle"
-                              />
-                            </Link>
-                            {/* text */}
-                            <div className="mt-4">
-                              <h5 className="fs-6 mb-0">
-                                <Link to="#" className="text-inherit">
-                                  Atta, Rice &amp; Dal
-                                </Link>
-                              </h5>
-                            </div>
-                          </div>
-                        </Zoom>
-                      </div>
+                          </Zoom>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
@@ -806,7 +581,7 @@ const Home = () => {
                                 Get Upto <span className="fw-bold">30%</span>{" "}
                                 Off
                               </p>
-                              <Link to="#!" className="btn btn-dark">
+                              <Link to="/Shop" className="btn btn-dark">
                                 Shop Now
                               </Link>
                             </div>
@@ -833,7 +608,7 @@ const Home = () => {
                                 Get Upto <span className="fw-bold">25%</span>{" "}
                                 Off
                               </p>
-                              <Link to="#!" className="btn btn-dark">
+                              <Link to="/Shop" className="btn btn-dark">
                                 Shop Now
                               </Link>
                             </div>
@@ -999,7 +774,7 @@ const Home = () => {
                           <p className="text-white">
                             Get the best deal before close.
                           </p>
-                          <Link to="#!" className="btn btn-primary">
+                          <Link to="/Shop" className="btn btn-primary">
                             Shop Now{" "}
                             <i className="feather-icon icon-arrow-right ms-1" />
                           </Link>
@@ -1094,24 +869,13 @@ const Home = () => {
                                     </div>
                                   </div>
                                   <div className="d-grid mt-2">
-                                    <Link to="#!" className="btn btn-primary ">
-                                      <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        width={16}
-                                        height={16}
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth={2}
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        className="feather feather-plus"
-                                      >
-                                        <line x1={12} y1={5} x2={12} y2={19} />
-                                        <line x1={5} y1={12} x2={19} y2={12} />
-                                      </svg>{" "}
-                                      Add to cart{" "}
-                                    </Link>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleHomeAddToCart("Golden Pineapple", 13, bannerdeal)}
+                                      className="btn btn-primary w-100 fw-bold"
+                                    >
+                                      + Add to cart
+                                    </button>
                                   </div>
                                   <div className="d-flex justify-content-start text-center mt-3">
                                     <div
@@ -1208,24 +972,13 @@ const Home = () => {
                                     </div>
                                   </div>
                                   <div className="d-grid mt-2">
-                                    <Link to="#!" className="btn btn-primary ">
-                                      <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        width={16}
-                                        height={16}
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth={2}
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        className="feather feather-plus"
-                                      >
-                                        <line x1={12} y1={5} x2={12} y2={19} />
-                                        <line x1={5} y1={12} x2={19} y2={12} />
-                                      </svg>{" "}
-                                      Add to cart{" "}
-                                    </Link>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleHomeAddToCart("Golden Pineapple", 13, bannerdeal)}
+                                      className="btn btn-primary w-100 fw-bold"
+                                    >
+                                      + Add to cart
+                                    </button>
                                   </div>
                                   <div className="d-flex justify-content-start text-center mt-3">
                                     <div
@@ -1322,24 +1075,13 @@ const Home = () => {
                                     </div>
                                   </div>
                                   <div className="d-grid mt-2">
-                                    <Link to="#!" className="btn btn-primary ">
-                                      <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        width={16}
-                                        height={16}
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth={2}
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        className="feather feather-plus"
-                                      >
-                                        <line x1={12} y1={5} x2={12} y2={19} />
-                                        <line x1={5} y1={12} x2={19} y2={12} />
-                                      </svg>{" "}
-                                      Add to cart{" "}
-                                    </Link>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleHomeAddToCart("Golden Pineapple", 13, bannerdeal)}
+                                      className="btn btn-primary w-100 fw-bold"
+                                    >
+                                      + Add to cart
+                                    </button>
                                   </div>
                                   <div className="d-flex justify-content-start text-center mt-3">
                                     <div
@@ -1436,24 +1178,13 @@ const Home = () => {
                                     </div>
                                   </div>
                                   <div className="d-grid mt-2">
-                                    <Link to="#!" className="btn btn-primary ">
-                                      <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        width={16}
-                                        height={16}
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth={2}
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        className="feather feather-plus"
-                                      >
-                                        <line x1={12} y1={5} x2={12} y2={19} />
-                                        <line x1={5} y1={12} x2={19} y2={12} />
-                                      </svg>{" "}
-                                      Add to cart{" "}
-                                    </Link>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleHomeAddToCart("Golden Pineapple", 13, bannerdeal)}
+                                      className="btn btn-primary w-100 fw-bold"
+                                    >
+                                      + Add to cart
+                                    </button>
                                   </div>
                                   <div className="d-flex justify-content-start text-center mt-3">
                                     <div

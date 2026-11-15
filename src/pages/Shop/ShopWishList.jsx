@@ -1,396 +1,218 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import '@fortawesome/fontawesome-free/css/all.min.css';
-import productimage15 from '../../images/product-img-15.jpg'
-import productimage16 from '../../images/product-img-16.jpg'
-import productimage17 from '../../images/product-img-17.jpg'
-import productimage18 from '../../images/product-img-18.jpg'
-import productimage19 from '../../images/product-img-19.jpg'
-import { MagnifyingGlass } from 'react-loader-spinner'
+import "@fortawesome/fontawesome-free/css/all.min.css";
+import Swal from "sweetalert2";
 import ScrollToTop from "../ScrollToTop";
+import { useCart } from "../../context/CartContext";
+import { INITIAL_PRODUCTS } from "../../services/dataService";
+
+const STORAGE_KEY = "grocery_app_wishlist";
 
 const ShopWishList = () => {
+  const { addToCart } = useCart();
 
+  const [wishlistItems, setWishlistItems] = useState(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.error(e);
+    }
+    // Default initial wishlist items from product catalog
+    return INITIAL_PRODUCTS.slice(0, 4);
+  });
 
-   // loading
-   const [loaderStatus, setLoaderStatus] = useState(true);
-   useEffect(() => {
-     setTimeout(() => {
-       setLoaderStatus(false);
-     }, 1500);
-   }, []);
- 
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(wishlistItems));
+    } catch (e) {
+      console.error(e);
+    }
+  }, [wishlistItems]);
+
+  const handleAddToCart = (product) => {
+    addToCart(product, 1);
+    Swal.fire({
+      icon: "success",
+      title: "Added to Cart!",
+      text: `${product.name} is now in your basket.`,
+      timer: 1500,
+      showConfirmButton: false,
+    });
+  };
+
+  const handleRemove = (productId, productName) => {
+    setWishlistItems((prev) => prev.filter((item) => item.id !== productId));
+    Swal.fire({
+      icon: "info",
+      title: "Removed",
+      text: `${productName} removed from wishlist.`,
+      timer: 1200,
+      showConfirmButton: false,
+    });
+  };
+
+  const handleAddAllToCart = () => {
+    if (wishlistItems.length === 0) return;
+    wishlistItems.forEach((item) => addToCart(item, 1));
+    Swal.fire({
+      icon: "success",
+      title: "All Items Added!",
+      text: `${wishlistItems.length} products added to your cart.`,
+      timer: 1500,
+      showConfirmButton: false,
+    });
+  };
+
+  const handleClearWishlist = () => {
+    setWishlistItems([]);
+    Swal.fire({
+      icon: "info",
+      title: "Wishlist Cleared",
+      timer: 1200,
+      showConfirmButton: false,
+    });
+  };
+
   return (
-    <div>
-      <div>
-      {loaderStatus ? (
-        <div className="loader-container">
-          {/* <PulseLoader loading={loaderStatus} size={50} color="#0aad0a" /> */}
-          <MagnifyingGlass
-  visible={true}
-  height="100"
-  width="100"
-  ariaLabel="magnifying-glass-loading"
-  wrapperStyle={{}}
-  wrapperclassName="magnifying-glass-wrapper"
-  glassColor="#c0efff"
-  color="#0aad0a"
-  />
-        </div>
-      ) : (
-        <>
-         <>
-        <ScrollToTop/>
-        </>
-      <>
-        {/* section */}
-        <section className="my-14">
-          <div className="container">
-            {/* row */}
-            <div className="row">
-              <div className="offset-lg-1 col-lg-10">
-                <div className="mb-8">
-                  {/* heading */}
-                  <h1 className="mb-1">My Wishlist</h1>
-                  <p>There are 5 products in this wishlist.</p>
-                </div>
-                <div>
-                  {/* table */}
-                  <div className="table-responsive">
-                    <table className="table text-nowrap">
-                      <thead className="table-light">
-                        <tr>
-                          <th>
-                            {/* form check */}
-                            <div className="form-check">
-                              {/* input */}
-                              <input
-                                className="form-check-input"
-                                type="checkbox"
-                                defaultValue
-                                id="chechboxOne"
-                              />
-                              {/* label */}
-                              <label
-                                className="form-check-label"
-                                htmlFor="chechboxOne"
-                              ></label>
-                            </div>
-                          </th>
-                          <th />
-                          <th>Product</th>
-                          <th>Amount</th>
-                          <th>Status</th>
-                          <th>Actions</th>
-                          <th>Remove</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr>
-                          <td className="align-middle">
-                            {/* form check */}
-                            <div className="form-check">
-                              {/* input */}
-                              <input
-                                className="form-check-input"
-                                type="checkbox"
-                                defaultValue
-                                id="chechboxTwo"
-                              />
-                              {/* label */}
-                              <label
-                                className="form-check-label"
-                                htmlFor="chechboxTwo"
-                              ></label>
-                            </div>
-                          </td>
-                          <td className="align-middle">
-                            <Link to="#">
-                              <img
-                                src={productimage18}
-                                className="img-fluid icon-shape icon-xxl"
-                                alt="product"
-                              />
-                            </Link>
-                          </td>
-                          <td className="align-middle">
-                            <div>
-                              <h5 className="fs-6 mb-0">
-                                <Link to="#" className="text-inherit">
-                                  Organic Banana
-                                </Link>
-                              </h5>
-                              <small>$.98 / lb</small>
-                            </div>
-                          </td>
-                          <td className="align-middle">$35.00</td>
-                          <td className="align-middle">
-                            <span className="badge bg-success">In Stock</span>
-                          </td>
-                          <td className="align-middle">
-                            <div className="btn btn-primary btn-sm">
-                              Add to Cart
-                            </div>
-                          </td>
-                          <td className="align-middle text-center">
-                            <Link
-                              to="#"
-                              className="text-muted"
-                              data-bs-toggle="tooltip"
-                              data-bs-placement="top"
-                              title="Delete"
-                            >
-                              <i class="fas fa-trash-alt"></i>
-                            </Link>
-                          </td>
-                        </tr>
-                        <tr>
-                          <td className="align-middle">
-                            {/* form check */}
-                            <div className="form-check">
-                              {/* input */}
-                              <input
-                                className="form-check-input"
-                                type="checkbox"
-                                defaultValue
-                                id="chechboxThree"
-                              />
-                              {/* label */}
-                              <label
-                                className="form-check-label"
-                                htmlFor="chechboxThree"
-                              ></label>
-                            </div>
-                          </td>
-                          <td className="align-middle">
-                            <Link to="#">
-                              <img
-                                src={productimage17}
-                                className="img-fluid icon-shape icon-xxl"
-                                alt="product"
-                              />
-                            </Link>
-                          </td>
-                          <td className="align-middle">
-                            <div>
-                              <h5 className="fs-6 mb-0">
-                                <Link to="#" className="text-inherit">
-                                  Fresh Kiwi
-                                </Link>
-                              </h5>
-                              <small>4 no</small>
-                            </div>
-                          </td>
-                          <td className="align-middle">$20.97</td>
-                          <td className="align-middle">
-                            <span className="badge bg-danger">
-                              Out of Stock
-                            </span>
-                          </td>
-                          <td className="align-middle">
-                            <div className="btn btn-dark btn-sm">
-                              Contact us
-                            </div>
-                          </td>
-                          <td className="align-middle text-center">
-                            <Link
-                              to="#"
-                              className="text-muted"
-                              data-bs-toggle="tooltip"
-                              data-bs-placement="top"
-                              title="Delete"
-                            >
-                              <i class="fas fa-trash-alt"></i>
-                            </Link>
-                          </td>
-                        </tr>
-                        <tr>
-                          <td className="align-middle">
-                            {/* form check */}
-                            <div className="form-check">
-                              {/* input */}
-                              <input
-                                className="form-check-input"
-                                type="checkbox"
-                                defaultValue
-                                id="chechboxFour"
-                              />
-                              {/* label */}
-                              <label
-                                className="form-check-label"
-                                htmlFor="chechboxFour"
-                              ></label>
-                            </div>
-                          </td>
-                          <td className="align-middle">
-                            <Link to="#">
-                              <img
-                                src={productimage16}
-                                className="img-fluid icon-shape icon-xxl"
-                                alt="product"
-                              />
-                            </Link>
-                          </td>
-                          <td className="align-middle">
-                            <div>
-                              <h5 className="fs-6 mb-0">
-                                <Link to="#" className="text-inherit">
-                                  Golden Pineapple
-                                </Link>
-                              </h5>
-                              <small>2 no</small>
-                            </div>
-                          </td>
-                          <td className="align-middle">$35.00</td>
-                          <td className="align-middle">
-                            <span className="badge bg-success">In Stock</span>
-                          </td>
-                          <td className="align-middle">
-                            <div className="btn btn-primary btn-sm">
-                              Add to Cart
-                            </div>
-                          </td>
-                          <td className="align-middle text-center">
-                            <Link
-                              to="#"
-                              className="text-muted"
-                              data-bs-toggle="tooltip"
-                              data-bs-placement="top"
-                              title="Delete"
-                            >
-                              <i class="fas fa-trash-alt"></i>
-                            </Link>
-                          </td>
-                        </tr>
-                        <tr>
-                          <td className="align-middle">
-                            {/* form check */}
-                            <div className="form-check">
-                              {/* input */}
-                              <input
-                                className="form-check-input"
-                                type="checkbox"
-                                defaultValue
-                                id="chechboxFive"
-                              />
-                              {/* label */}
-                              <label
-                                className="form-check-label"
-                                htmlFor="chechboxFive"
-                              ></label>
-                            </div>
-                          </td>
-                          <td className="align-middle">
-                            <Link to="#">
-                              <img
-                                src={productimage19}
-                                className="img-fluid icon-shape icon-xxl"
-                                alt="product"
-                              />
-                            </Link>
-                          </td>
-                          <td className="align-middle">
-                            <div>
-                              <h5 className="fs-6 mb-0">
-                                <Link to="#" className="text-inherit">
-                                  BeatRoot
-                                </Link>
-                              </h5>
-                              <small>1 kg</small>
-                            </div>
-                          </td>
-                          <td className="align-middle">$29.00</td>
-                          <td className="align-middle">
-                            <span className="badge bg-success">In Stock</span>
-                          </td>
-                          <td className="align-middle">
-                            <div className="btn btn-primary btn-sm">
-                              Add to Cart
-                            </div>
-                          </td>
-                          <td className="align-middle text-center">
-                            <Link
-                              to="#"
-                              className="text-muted"
-                              data-bs-toggle="tooltip"
-                              data-bs-placement="top"
-                              title="Delete"
-                            >
-                              <i class="fas fa-trash-alt"></i>
-                            </Link>
-                          </td>
-                        </tr>
-                        <tr>
-                          <td className="align-middle">
-                            {/* form check */}
-                            <div className="form-check">
-                              {/* input */}
-                              <input
-                                className="form-check-input"
-                                type="checkbox"
-                                defaultValue
-                                id="chechboxSix"
-                              />
-                              {/* label */}
-                              <label
-                                className="form-check-label"
-                                htmlFor="chechboxSix"
-                              ></label>
-                            </div>
-                          </td>
-                          <td className="align-middle">
-                            <Link to="#">
-                              <img
-                                src={productimage15}
-                                className="img-fluid icon-shape icon-xxl"
-                                alt="product"
-                              />
-                            </Link>
-                          </td>
-                          <td className="align-middle">
-                            <div>
-                              <h5 className="fs-6 mb-0">
-                                <Link to="#" className="text-inherit">
-                                  Fresh Apple
-                                </Link>
-                              </h5>
-                              <small>2 kg</small>
-                            </div>
-                          </td>
-                          <td className="align-middle">$70.00</td>
-                          <td className="align-middle">
-                            <span className="badge bg-success">In Stock</span>
-                          </td>
-                          <td className="align-middle">
-                            <div className="btn btn-primary btn-sm">
-                              Add to Cart
-                            </div>
-                          </td>
-                          <td className="align-middle text-center">
-                            <Link
-                              to="#"
-                              className="text-muted"
-                              data-bs-toggle="tooltip"
-                              data-bs-placement="top"
-                              title="Delete"
-                            >
-                              <i class="fas fa-trash-alt"></i>
-                            </Link>
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
+    <div className="bg-light py-5" style={{ minHeight: "80vh" }}>
+      <ScrollToTop />
+
+      <div className="container">
+        {/* Breadcrumb */}
+        <nav aria-label="breadcrumb" className="mb-4">
+          <ol className="breadcrumb">
+            <li className="breadcrumb-item">
+              <Link to="/">Home</Link>
+            </li>
+            <li className="breadcrumb-item">
+              <Link to="/Shop">Shop</Link>
+            </li>
+            <li className="breadcrumb-item active" aria-current="page">
+              My Wishlist
+            </li>
+          </ol>
+        </nav>
+
+        <div className="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
+          <div className="d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div>
+              <h2 className="fw-bold mb-1">❤️ My Wishlist</h2>
+              <p className="text-muted mb-0">
+                You have {wishlistItems.length} saved product{wishlistItems.length === 1 ? "" : "s"}.
+              </p>
+            </div>
+
+            {wishlistItems.length > 0 && (
+              <div className="d-flex gap-2">
+                <button
+                  type="button"
+                  onClick={handleAddAllToCart}
+                  className="btn btn-success btn-sm rounded-pill px-3 fw-semibold"
+                >
+                  ⚡ Move All to Cart
+                </button>
+                <button
+                  type="button"
+                  onClick={handleClearWishlist}
+                  className="btn btn-outline-danger btn-sm rounded-pill px-3 fw-semibold"
+                >
+                  Clear Wishlist
+                </button>
               </div>
+            )}
+          </div>
+        </div>
+
+        {wishlistItems.length === 0 ? (
+          <div className="card border-0 shadow-sm rounded-4 p-5 text-center bg-white">
+            <span className="fs-1 d-block mb-3">🤍</span>
+            <h4 className="fw-bold">Your Wishlist is Empty</h4>
+            <p className="text-muted small">
+              Explore our fresh groceries and add your favorite items to your wishlist!
+            </p>
+            <div className="mt-3">
+              <Link to="/Shop" className="btn btn-success px-4 rounded-pill fw-semibold">
+                Browse Groceries →
+              </Link>
             </div>
           </div>
-        </section>
-      </>
-      </>
-    )}
-  </div>
+        ) : (
+          <div className="card border-0 shadow-sm rounded-4 p-3 bg-white">
+            <div className="table-responsive">
+              <table className="table align-middle table-hover mb-0">
+                <thead className="table-light">
+                  <tr>
+                    <th scope="col" style={{ width: "80px" }}>Item</th>
+                    <th scope="col">Product Details</th>
+                    <th scope="col">Price</th>
+                    <th scope="col">Stock Status</th>
+                    <th scope="col" className="text-center">Action</th>
+                    <th scope="col" className="text-center">Remove</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {wishlistItems.map((item) => (
+                    <tr key={item.id}>
+                      <td>
+                        <img
+                          src={item.image}
+                          alt={item.name}
+                          className="rounded-3 border p-1"
+                          style={{ width: "65px", height: "65px", objectFit: "contain" }}
+                        />
+                      </td>
+
+                      <td>
+                        <h6 className="fw-bold mb-0 text-dark">{item.name}</h6>
+                        <small className="text-muted">{item.category} {item.unit ? `• ${item.unit}` : ""}</small>
+                      </td>
+
+                      <td>
+                        <span className="fw-bold text-dark fs-6">₹{item.price}</span>
+                        {item.old_price && (
+                          <small className="text-decoration-line-through text-muted ms-2">
+                            ₹{item.old_price}
+                          </small>
+                        )}
+                      </td>
+
+                      <td>
+                        <span className="badge bg-success-subtle text-success fw-semibold">
+                          ● In Stock (10m Dispatch)
+                        </span>
+                      </td>
+
+                      <td className="text-center">
+                        <button
+                          type="button"
+                          onClick={() => handleAddToCart(item)}
+                          className="btn btn-sm btn-success rounded-pill px-3 fw-bold shadow-sm"
+                        >
+                          + Add to Cart
+                        </button>
+                      </td>
+
+                      <td className="text-center">
+                        <button
+                          type="button"
+                          onClick={() => handleRemove(item.id, item.name)}
+                          className="btn btn-sm btn-outline-danger border-0 rounded-circle p-2"
+                          title="Remove from wishlist"
+                        >
+                          <i className="fas fa-trash-alt"></i>
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
+
 export default ShopWishList;
