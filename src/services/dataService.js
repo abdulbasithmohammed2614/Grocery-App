@@ -309,26 +309,111 @@ export const getDynamicCategories = (productsList = INITIAL_PRODUCTS) => {
 // Fallback categories dynamically computed from initial products
 export const INITIAL_CATEGORIES = getDynamicCategories(INITIAL_PRODUCTS);
 
+// Local storage override key for vendor and admin product modifications
+const PRODUCTS_OVERRIDE_KEY = "grocery_products_override";
+
+export const getStoredProductsOverride = () => {
+  try {
+    const saved = localStorage.getItem(PRODUCTS_OVERRIDE_KEY);
+    return saved ? JSON.parse(saved) : null;
+  } catch (e) {
+    return null;
+  }
+};
+
+export const setStoredProductsOverride = (products) => {
+  try {
+    localStorage.setItem(PRODUCTS_OVERRIDE_KEY, JSON.stringify(products));
+  } catch (e) {
+    console.error("Error saving local products override:", e);
+  }
+};
+
 // Data service helpers to fetch from Supabase (or fallback)
 export const fetchProductsFromDb = async (category = "All") => {
-  try {
-    let query = supabase.from("products").select("*");
-    if (category && category !== "All") {
-      query = query.eq("category", category);
+  let allProducts = [];
+
+  // Check if locally modified by vendor/admin first
+  const storedOverride = getStoredProductsOverride();
+  if (Array.isArray(storedOverride) && storedOverride.length > 0) {
+    allProducts = storedOverride;
+  } else {
+    try {
+      let query = supabase.from("products").select("*");
+      const { data, error } = await query;
+      if (!error && Array.isArray(data) && data.length > 0) {
+        allProducts = data;
+      }
+    } catch (e) {
+      // Supabase query failed or table not found
     }
-    const { data, error } = await query;
-    if (!error && Array.isArray(data) && data.length > 0) {
-      return data;
+
+    if (allProducts.length === 0) {
+      allProducts = INITIAL_PRODUCTS;
     }
-  } catch (e) {
-    // Supabase query failed or table not found
   }
 
-  // Fallback to initial products
   if (category && category !== "All") {
-    return INITIAL_PRODUCTS.filter((p) => p.category === category);
+    return allProducts.filter((p) => p.category === category);
   }
-  return INITIAL_PRODUCTS;
+  return allProducts;
+};
+
+// Modify product (Vendor & Admin privilege)
+export const updateProductInDb = async (productId, updates) => {
+  let currentList = await fetchProductsFromDb("All");
+  const updatedList = currentList.map((p) =>
+    p.id === productId ? { ...p, ...updates } : p
+  );
+  setStoredProductsOverride(updatedList);
+
+  try {
+    await supabase.from("products").update(updates).eq("id", productId);
+  } catch (e) {}
+
+  return updatedList.find((p) => p.id === productId);
+};
+
+// Add product (Vendor & Admin privilege)
+export const addProductToDb = async (productData) => {
+  let currentList = await fetchProductsFromDb("All");
+  const newProduct = {
+    id: `p_${Date.now()}`,
+    name: productData.name,
+    category: productData.category || "Snacks & Munchies",
+    price: Number(productData.price || 0),
+    old_price: Number(productData.old_price || productData.price || 0),
+    unit: productData.unit || "1 unit",
+    rating: 4.8,
+    reviews: 1,
+    badge: productData.badge || "New",
+    image: productData.image || product1,
+    is_popular: true,
+    is_best_seller: false,
+    ...productData,
+  };
+
+  const updatedList = [newProduct, ...currentList];
+  setStoredProductsOverride(updatedList);
+
+  try {
+    await supabase.from("products").insert([newProduct]);
+  } catch (e) {}
+
+  return newProduct;
+};
+
+// Delete product (Vendor & Admin privilege)
+export const deleteProductFromDb = async (productId) => {
+  let currentList = await fetchProductsFromDb("All");
+  const updatedList = currentList.filter((p) => p.id !== productId);
+  setStoredProductsOverride(updatedList);
+
+  try {
+    await supabase.from("products").delete().eq("id", productId);
+  } catch (e) {}
+
+  return true;
 };
 
 export const fetchStoresFromDb = async () => {

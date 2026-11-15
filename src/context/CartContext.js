@@ -11,6 +11,9 @@ import React, {
 const CartContext = createContext(null);
 
 const CART_STORAGE_KEY = "grocery-app-cart";
+export const FREE_DELIVERY_THRESHOLD = 499;
+export const STANDARD_DELIVERY_FEE = 40;
+export const STANDARD_HANDLING_FEE = 3;
 
 const getInitialCart = () => {
   try {
@@ -24,6 +27,21 @@ const getInitialCart = () => {
 
 export const CartProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState(getInitialCart);
+
+  // Sync across tabs / storage events
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === CART_STORAGE_KEY) {
+        try {
+          setCartItems(e.newValue ? JSON.parse(e.newValue) : []);
+        } catch (err) {
+          console.error("Error syncing cart from storage:", err);
+        }
+      }
+    };
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
 
   // Persist cart
   useEffect(() => {
@@ -147,11 +165,31 @@ export const CartProvider = ({ children }) => {
     [cartItems]
   );
 
+  // Synchronized fees & grand total
+  const deliveryFee = useMemo(() => {
+    if (cartItems.length === 0 || cartTotal >= FREE_DELIVERY_THRESHOLD) return 0;
+    return STANDARD_DELIVERY_FEE;
+  }, [cartItems.length, cartTotal]);
+
+  const handlingFee = useMemo(() => {
+    if (cartItems.length === 0) return 0;
+    return STANDARD_HANDLING_FEE;
+  }, [cartItems.length]);
+
+  const grandTotal = useMemo(() => {
+    if (cartItems.length === 0) return 0;
+    return cartTotal + deliveryFee + handlingFee;
+  }, [cartItems.length, cartTotal, deliveryFee, handlingFee]);
+
   const value = useMemo(
     () => ({
       cartItems,
       cartCount,
       cartTotal,
+      deliveryFee,
+      handlingFee,
+      grandTotal,
+      freeDeliveryThreshold: FREE_DELIVERY_THRESHOLD,
       addToCart,
       updateQuantity,
       increaseQuantity,
@@ -163,6 +201,9 @@ export const CartProvider = ({ children }) => {
       cartItems,
       cartCount,
       cartTotal,
+      deliveryFee,
+      handlingFee,
+      grandTotal,
       addToCart,
       updateQuantity,
       increaseQuantity,

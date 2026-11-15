@@ -220,7 +220,20 @@ const CustomerLogin = () => {
             </div>
           )}
 
+          {/* New to FreshCart Sign Up Prompt */}
           <div className="text-center mt-4 pt-3 border-top">
+            <p className="text-muted small mb-2">
+              Don't have an account yet?
+            </p>
+            <Link
+              to="/signup"
+              className="btn btn-outline-success btn-sm rounded-pill px-4 fw-bold"
+            >
+              ✨ Register New Account
+            </Link>
+          </div>
+
+          <div className="text-center mt-3 pt-2">
             <Link to="/seller/login" className="text-muted small text-decoration-none">
               🏪 Store Manager? <strong>Open Seller Login →</strong>
             </Link>

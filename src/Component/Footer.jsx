@@ -130,7 +130,7 @@ const Footer = () => {
                     </Link>
                   </li>
                   <li className="mb-2">
-                    <Link to="/quick-order" className="text-decoration-none text-muted">
+                    <Link to="/checkout" className="text-decoration-none text-muted">
                       <i className="fa fa-angle-right me-2 text-success" /> ⚡ Express Checkout
                     </Link>
                   </li>

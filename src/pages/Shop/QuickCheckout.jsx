@@ -7,7 +7,17 @@ import { API_BASE_URL } from "../../utils/apiConfig";
 
 const QuickCheckout = () => {
   const navigate = useNavigate();
-  const { cartItems, cartCount, cartTotal, updateQuantity, removeFromCart, clearCart } = useCart();
+  const {
+    cartItems,
+    cartCount,
+    cartTotal,
+    deliveryFee,
+    handlingFee,
+    grandTotal,
+    updateQuantity,
+    removeFromCart,
+    clearCart,
+  } = useCart();
   const { user } = useAuth();
 
   const [formData, setFormData] = useState({
@@ -29,11 +39,9 @@ const QuickCheckout = () => {
     if (errorMsg) setErrorMsg("");
   };
 
-  // Pricing calculations
+  // Synchronized pricing calculations with CartContext
   const subtotal = cartTotal;
-  const deliveryFee = subtotal > 199 || subtotal === 0 ? 0 : 25;
-  const handlingFee = subtotal > 0 ? 3 : 0;
-  const totalAmount = subtotal + deliveryFee + handlingFee;
+  const totalAmount = grandTotal;
 
   const handleSubmitOrder = async (e) => {
     e.preventDefault();

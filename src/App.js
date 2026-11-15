@@ -14,6 +14,7 @@ import AboutUs from "./pages/About/AboutUs";
 import Contact from "./pages/About/Contact";
 // Shop pages
 import Shop from "./pages/Shop/Shop";
+import ShopCart from "./pages/Shop/ShopCart";
 import QuickCheckout from "./pages/Shop/QuickCheckout";
 import OrderTracker from "./pages/Shop/OrderTracker";
 import ShopWishList from "./pages/Shop/ShopWishList";
@@ -22,7 +23,9 @@ import StoreList from "./pages/store/StoreList";
 // Seller Portal & Auth
 import SellerDashboard from "./pages/Seller/SellerDashboard";
 import SellerLogin from "./pages/Seller/SellerLogin";
+import VendorRegister from "./pages/Seller/VendorRegister";
 import CustomerLogin from "./pages/Accounts/CustomerLogin";
+import CustomerSignUp from "./pages/Accounts/CustomerSignUp";
 import { SellerRoute } from "./Component/ProtectedRoute";
 // Account pages
 import MyAccountOrder from "./pages/Accounts/MyAccountOrder";
@@ -35,21 +38,25 @@ const App = () => {
         <Routes>
           <Route path="/" element={<Home />} />
 
-          {/* Shop & Single Unified Quick Checkout */}
+          {/* Shop, Cart & Unified Main Checkout */}
           <Route path="/Shop" element={<Shop />} />
           <Route path="/ShopWishList" element={<ShopWishList />} />
-          <Route path="/ShopCart" element={<Navigate to="/quick-order" replace />} />
-          <Route path="/ShopCheckOut" element={<Navigate to="/quick-order" replace />} />
-          <Route path="/checkout" element={<Navigate to="/quick-order" replace />} />
-          <Route path="/quick-order" element={<QuickCheckout />} />
+          <Route path="/ShopCart" element={<ShopCart />} />
+          <Route path="/cart" element={<ShopCart />} />
+          <Route path="/checkout" element={<QuickCheckout />} />
+          <Route path="/quick-order" element={<Navigate to="/checkout" replace />} />
+          <Route path="/ShopCheckOut" element={<Navigate to="/checkout" replace />} />
           <Route path="/order-track/:orderId" element={<OrderTracker />} />
 
           {/* Stores */}
           <Route path="/StoreList" element={<StoreList />} />
           <Route path="/SingleShop" element={<Navigate to="/Shop" replace />} />
 
-          {/* Seller / Store Portal */}
+          {/* Seller / Store Portal & Vendor Onboarding */}
           <Route path="/seller/login" element={<SellerLogin />} />
+          <Route path="/vendor/login" element={<SellerLogin />} />
+          <Route path="/vendor/register" element={<VendorRegister />} />
+          <Route path="/seller/register" element={<VendorRegister />} />
           <Route
             path="/seller"
             element={
@@ -66,11 +73,23 @@ const App = () => {
               </SellerRoute>
             }
           />
+          <Route
+            path="/admin"
+            element={
+              <SellerRoute>
+                <SellerDashboard />
+              </SellerRoute>
+            }
+          />
 
-          {/* Customer Auth */}
+          {/* Customer Auth (Sign In & Sign Up) */}
           <Route path="/customer-login" element={<CustomerLogin />} />
           <Route path="/MyAccountSignIn" element={<CustomerLogin />} />
           <Route path="/login" element={<CustomerLogin />} />
+          <Route path="/signup" element={<CustomerSignUp />} />
+          <Route path="/register" element={<CustomerSignUp />} />
+          <Route path="/customer-signup" element={<CustomerSignUp />} />
+          <Route path="/MyAccountSignUp" element={<CustomerSignUp />} />
 
           {/* Account & Orders */}
           <Route path="/MyAccountOrder" element={<MyAccountOrder />} />

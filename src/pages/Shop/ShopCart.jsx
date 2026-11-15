@@ -298,8 +298,8 @@ const ShopCart = () => {
 
                   {cartItems.length > 0 && (
                     <Link
-                      to="/ShopCheckOut"
-                      className="btn btn-primary w-100"
+                      to="/checkout"
+                      className="btn btn-success w-100 py-3 fw-bold rounded-3"
                     >
                       Proceed to Checkout
                       <i className="bi bi-arrow-right ms-2" />

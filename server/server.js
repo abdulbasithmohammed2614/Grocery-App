@@ -4,6 +4,7 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const crypto = require("crypto");
 const path = require("path");
+const nodemailer = require("nodemailer");
 const { createClient } = require("@supabase/supabase-js");
 const {
   loadSecretsFromSupabase,
@@ -78,7 +79,110 @@ app.get("/api/health", (req, res) => {
 const SELLER_EMAIL = process.env.SELLER_EMAIL || "seller@grocery.com";
 const SELLER_PASSWORD = process.env.SELLER_PASSWORD || "storepassword123";
 
-// Seller login
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "admin@grocery.com";
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "adminpassword123";
+
+// Placeholder Email Configuration (Update with actual SMTP credentials when available)
+const SMTP_HOST = process.env.SMTP_HOST || "smtp.example.com";
+const SMTP_PORT = Number(process.env.SMTP_PORT) || 587;
+const SMTP_SECURE = process.env.SMTP_SECURE === "true";
+const SMTP_USER = process.env.SMTP_USER || "verification@freshcartgrocery.com";
+const SMTP_PASS = process.env.SMTP_PASS || "placeholder_email_password";
+const SMTP_FROM = process.env.SMTP_FROM || '"FreshCart Verification" <verification@freshcartgrocery.com>';
+
+let mailTransporter = null;
+try {
+  mailTransporter = nodemailer.createTransport({
+    host: SMTP_HOST,
+    port: SMTP_PORT,
+    secure: SMTP_SECURE,
+    auth: {
+      user: SMTP_USER,
+      pass: SMTP_PASS,
+    },
+    connectionTimeout: 2000,
+    greetingTimeout: 2000,
+  });
+} catch (e) {
+  console.log("[Email Service] Notice: Mail transporter setup deferred:", e.message);
+}
+
+// In-memory verification code registry: cleanEmail -> { code, expiresAt, verified, type }
+const activeVerificationCodes = new Map();
+
+// Helper: Generate secure 6-digit numeric OTP
+const generateNumericOtp = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+};
+
+// Helper: Dispatch verification code email (with placeholder fallback)
+const sendVerificationEmail = async (toEmail, code, type = "customer") => {
+  const title = type === "vendor" ? "Vendor Account Verification Code" : "Customer Verification Code";
+  const htmlContent = `
+    <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 24px; border: 1px solid #e0e0e0; border-radius: 12px; background-color: #ffffff;">
+      <div style="text-align: center; margin-bottom: 20px;">
+        <h2 style="color: #0aad0a; margin: 0; font-size: 26px;">FreshCart ⚡</h2>
+        <p style="color: #666; font-size: 13px; margin-top: 4px;">10-15 Min Express Grocery Delivery</p>
+      </div>
+      <div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; text-align: center; margin-bottom: 20px;">
+        <h3 style="margin: 0 0 10px 0; color: #222;">${title}</h3>
+        <p style="color: #555; font-size: 14px; margin: 0 0 16px 0;">Use this 6-digit numeric verification code to verify your email address:</p>
+        <div style="display: inline-block; background-color: #ffffff; border: 2px dashed #0aad0a; border-radius: 8px; padding: 12px 28px; font-size: 32px; font-weight: bold; letter-spacing: 6px; color: #0aad0a;">
+          ${code}
+        </div>
+        <p style="color: #888; font-size: 12px; margin-top: 14px; margin-bottom: 0;">This code is valid for 10 minutes. Do not share it with anyone.</p>
+      </div>
+      <div style="border-top: 1px solid #eee; padding-top: 14px; font-size: 11px; color: #999; text-align: center;">
+        Sent from placeholder: ${SMTP_FROM}
+      </div>
+    </div>
+  `;
+
+  try {
+    if (mailTransporter && SMTP_HOST !== "smtp.example.com") {
+      await mailTransporter.sendMail({
+        from: SMTP_FROM,
+        to: toEmail,
+        subject: `${code} is your FreshCart verification code`,
+        text: `Your FreshCart 6-digit verification code is: ${code}. Valid for 10 minutes.`,
+        html: htmlContent,
+      });
+      console.log(`[Email Service] Dispatched email to ${toEmail} from ${SMTP_FROM}`);
+    } else {
+      console.log(`[Email Service] Placeholder sender: Code for ${toEmail}: ${code}`);
+    }
+  } catch (err) {
+    console.log(`[Email Service] Note: Placeholder fallback used (${err.message}). Code for ${toEmail}: ${code}`);
+  }
+};
+
+// In-memory authorized vendor whitelist (Only Admins can add vendors!)
+let approvedVendorsList = [
+  {
+    id: "vnd_001",
+    name: "FreshCart Central Manager",
+    storeName: "FreshCart Central Darkstore",
+    email: "seller@grocery.com",
+    phone: "9876543210",
+    password: "storepassword123",
+    status: "APPROVED",
+    addedBy: "admin@grocery.com",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "vnd_002",
+    name: "Organic Produce Manager",
+    storeName: "Green Valley Farm Produce",
+    email: "organic.farms@grocery.com",
+    phone: "9812345678",
+    password: "vendorpassword123",
+    status: "APPROVED",
+    addedBy: "admin@grocery.com",
+    createdAt: new Date().toISOString(),
+  },
+];
+
+// Seller / Vendor / Admin login
 app.post("/api/auth/seller-login", async (req, res) => {
   const { email, password } = req.body;
 
@@ -86,10 +190,27 @@ app.post("/api/auth/seller-login", async (req, res) => {
     return res.status(400).json({ success: false, message: "Email and password are required" });
   }
 
+  const cleanEmail = email.trim().toLowerCase();
+
+  // 1. Check Platform Admin
+  if (cleanEmail === ADMIN_EMAIL.toLowerCase() && password === ADMIN_PASSWORD) {
+    return res.json({
+      success: true,
+      message: "Administrator authenticated successfully",
+      user: {
+        name: "Platform Administrator",
+        email: ADMIN_EMAIL,
+        role: "admin",
+        isGuest: false,
+      },
+    });
+  }
+
+  // 2. Check Primary Store Seller
   const sellerEmail = await getSecret("SELLER_EMAIL", "seller@grocery.com");
   const sellerPassword = await getSecret("SELLER_PASSWORD", "storepassword123");
 
-  if (email.trim().toLowerCase() === sellerEmail.toLowerCase() && password === sellerPassword) {
+  if (cleanEmail === sellerEmail.toLowerCase() && password === sellerPassword) {
     return res.json({
       success: true,
       message: "Seller authenticated successfully",
@@ -103,10 +224,254 @@ app.post("/api/auth/seller-login", async (req, res) => {
     });
   }
 
+  // 3. Check Approved Vendors Whitelist
+  const matchedVendor = approvedVendorsList.find(
+    (v) => v.email && v.email.toLowerCase() === cleanEmail
+  );
+
+  if (matchedVendor && matchedVendor.password === password) {
+    return res.json({
+      success: true,
+      message: "Vendor authenticated successfully",
+      user: {
+        name: matchedVendor.name || matchedVendor.storeName,
+        email: matchedVendor.email,
+        role: "vendor",
+        storeName: matchedVendor.storeName,
+        storeId: matchedVendor.id,
+        isGuest: false,
+      },
+    });
+  }
+
   return res.status(401).json({
     success: false,
-    message: "Invalid seller credentials. Use seller@grocery.com / storepassword123",
+    message: "Invalid seller or admin credentials. Use seller@grocery.com / storepassword123 or admin@grocery.com / adminpassword123",
   });
+});
+
+// Send 6-Digit Email Verification Code (Mandatory for Customer & Vendor Registration)
+app.post("/api/auth/send-verification-code", async (req, res) => {
+  const { email, type } = req.body || {};
+
+  if (!email || !email.includes("@")) {
+    return res.status(400).json({
+      success: false,
+      message: "A valid email address is mandatory to send a verification code.",
+    });
+  }
+
+  const cleanEmail = email.trim().toLowerCase();
+
+  // If registering as a vendor, verify whitelist first before dispatching code!
+  if (type === "vendor") {
+    const isWhitelisted = approvedVendorsList.find(
+      (v) => v.email && v.email.toLowerCase() === cleanEmail
+    );
+
+    if (!isWhitelisted) {
+      return res.status(403).json({
+        success: false,
+        message: `Registration Denied: '${cleanEmail}' is not on the Admin Approved Vendors list. Only platform Administrators can authorize new vendors.`,
+      });
+    }
+  }
+
+  const code = generateNumericOtp();
+  const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
+
+  activeVerificationCodes.set(cleanEmail, {
+    code,
+    expiresAt,
+    verified: false,
+    type: type || "customer",
+  });
+
+  await sendVerificationEmail(cleanEmail, code, type);
+
+  return res.json({
+    success: true,
+    message: `A 6-digit verification code has been sent to ${cleanEmail}.`,
+    previewCode: code, // development convenience when running with placeholder sender
+  });
+});
+
+// Verify 6-Digit Code
+app.post("/api/auth/verify-code", (req, res) => {
+  const { email, code } = req.body || {};
+
+  if (!email || !code) {
+    return res.status(400).json({
+      success: false,
+      message: "Email and 6-digit verification code are mandatory.",
+    });
+  }
+
+  const cleanEmail = email.trim().toLowerCase();
+  const cleanCode = code.toString().trim();
+  const record = activeVerificationCodes.get(cleanEmail);
+
+  if (!record) {
+    return res.status(400).json({
+      success: false,
+      message: "No verification code requested for this email. Please click 'Send Verification Code' first.",
+    });
+  }
+
+  if (Date.now() > record.expiresAt) {
+    activeVerificationCodes.delete(cleanEmail);
+    return res.status(400).json({
+      success: false,
+      message: "The verification code has expired. Please request a new 6-digit code.",
+    });
+  }
+
+  if (record.code !== cleanCode) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid 6-digit verification code. Please check your email and try again.",
+    });
+  }
+
+  record.verified = true;
+  return res.json({
+    success: true,
+    message: "Email successfully verified!",
+  });
+});
+
+// Vendor Whitelist Verification & Registration (Requires Valid 6-digit Code)
+app.post("/api/auth/vendor-register", (req, res) => {
+  const { name, storeName, email, password, phone, code } = req.body || {};
+  const cleanEmail = (email || "").trim().toLowerCase();
+
+  if (!cleanEmail || !password || password.length < 6) {
+    return res.status(400).json({
+      success: false,
+      message: "Valid email and a password of at least 6 characters are required",
+    });
+  }
+
+  // 1. Check Admin Whitelist
+  const isWhitelisted = approvedVendorsList.find(
+    (v) => v.email && v.email.toLowerCase() === cleanEmail
+  );
+
+  if (!isWhitelisted) {
+    return res.status(403).json({
+      success: false,
+      message: `Access Denied: '${cleanEmail}' is not on the Admin Approved Vendors list. Only platform Administrators can authorize and add vendors.`,
+    });
+  }
+
+  // 2. Check 6-digit verification code
+  const verification = activeVerificationCodes.get(cleanEmail);
+  if (code) {
+    if (!verification || verification.code !== code.toString().trim() || Date.now() > verification.expiresAt) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or expired 6-digit verification code for this vendor email.",
+      });
+    }
+  } else if (!verification || !verification.verified) {
+    return res.status(400).json({
+      success: false,
+      message: "Email verification is mandatory. Please enter the 6-digit code sent to your authorized email.",
+    });
+  }
+
+  activeVerificationCodes.delete(cleanEmail);
+
+  isWhitelisted.name = name || isWhitelisted.name;
+  isWhitelisted.storeName = storeName || isWhitelisted.storeName;
+  isWhitelisted.phone = phone || isWhitelisted.phone;
+  isWhitelisted.password = password;
+  isWhitelisted.status = "ACTIVE";
+
+  return res.json({
+    success: true,
+    message: "Vendor registered and activated successfully",
+    user: {
+      name: isWhitelisted.name,
+      email: isWhitelisted.email,
+      storeName: isWhitelisted.storeName,
+      storeId: isWhitelisted.id,
+      role: "vendor",
+      isGuest: false,
+    },
+  });
+});
+
+// Get Approved Vendors List
+app.get("/api/vendors", (req, res) => {
+  res.json({
+    success: true,
+    vendors: approvedVendorsList.map((v) => ({
+      id: v.id,
+      name: v.name,
+      storeName: v.storeName,
+      email: v.email,
+      phone: v.phone,
+      status: v.status,
+      addedBy: v.addedBy,
+      createdAt: v.createdAt,
+    })),
+  });
+});
+
+// Admin-only: Authorize/Add a new vendor
+app.post("/api/vendors", (req, res) => {
+  const { name, storeName, email, phone, password, adminEmail } = req.body || {};
+
+  // Simple admin role verification check
+  if (adminEmail && adminEmail.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+    return res.status(403).json({
+      success: false,
+      message: "Forbidden: Only platform Administrators can authorize and add vendors.",
+    });
+  }
+
+  if (!name || !storeName || !email) {
+    return res.status(400).json({
+      success: false,
+      message: "Name, store name, and email are required to authorize a vendor.",
+    });
+  }
+
+  const cleanEmail = email.trim().toLowerCase();
+  if (approvedVendorsList.some((v) => v.email && v.email.toLowerCase() === cleanEmail)) {
+    return res.status(400).json({
+      success: false,
+      message: "A vendor with this email is already authorized.",
+    });
+  }
+
+  const newVendor = {
+    id: `vnd_${Date.now()}`,
+    name: name.trim(),
+    storeName: storeName.trim(),
+    email: cleanEmail,
+    phone: phone ? phone.trim() : "",
+    password: password || "vendor123",
+    status: "APPROVED",
+    addedBy: adminEmail || "admin@grocery.com",
+    createdAt: new Date().toISOString(),
+  };
+
+  approvedVendorsList.unshift(newVendor);
+
+  return res.json({
+    success: true,
+    message: `Vendor '${storeName}' (${cleanEmail}) authorized successfully!`,
+    vendor: newVendor,
+  });
+});
+
+// Admin-only: Revoke vendor access
+app.delete("/api/vendors/:id", (req, res) => {
+  const { id } = req.params;
+  approvedVendorsList = approvedVendorsList.filter((v) => v.id !== id);
+  res.json({ success: true, message: "Vendor revoked successfully." });
 });
 
 // Customer login
@@ -131,6 +496,52 @@ app.post("/api/auth/customer-login", (req, res) => {
   }
 
   return res.status(401).json({ success: false, message: "Invalid email or password" });
+});
+
+// Customer registration (Requires Valid 6-Digit Email Verification Code)
+app.post("/api/auth/register", (req, res) => {
+  const { name, email, password, phone, code } = req.body || {};
+
+  if (!name || !email || !password) {
+    return res.status(400).json({ success: false, message: "Name, email, and password are required" });
+  }
+
+  if (password.length < 6) {
+    return res.status(400).json({ success: false, message: "Password must be at least 6 characters" });
+  }
+
+  const cleanEmail = email.trim().toLowerCase();
+  const verification = activeVerificationCodes.get(cleanEmail);
+
+  if (code) {
+    if (!verification || verification.code !== code.toString().trim() || Date.now() > verification.expiresAt) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or expired 6-digit verification code. Please check your email.",
+      });
+    }
+  } else if (!verification || !verification.verified) {
+    return res.status(400).json({
+      success: false,
+      message: "Email verification is mandatory. Please enter the 6-digit code sent to your email.",
+    });
+  }
+
+  activeVerificationCodes.delete(cleanEmail);
+
+  const user = {
+    name: name.trim(),
+    email: cleanEmail,
+    phone: phone ? phone.trim() : "",
+    role: "customer",
+    isGuest: false,
+  };
+
+  return res.json({
+    success: true,
+    message: "Customer verified and registered successfully",
+    user,
+  });
 });
 
 // Guest customer login

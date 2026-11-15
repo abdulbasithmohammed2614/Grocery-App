@@ -16,11 +16,14 @@ const DELIVERY_LOCATIONS = [
 
 const Header = () => {
   const navigate = useNavigate();
-  const { user, isSeller, logout } = useAuth();
+  const { user, isAdmin, canModify, logout } = useAuth();
   const {
     cartItems,
     cartCount,
     cartTotal,
+    deliveryFee,
+    handlingFee,
+    grandTotal,
     updateQuantity,
     removeFromCart,
   } = useCart();
@@ -31,6 +34,60 @@ const Header = () => {
     return localStorage.getItem("user_delivery_location") || "Indiranagar, Bangalore (560038)";
   });
   const [customLocationInput, setCustomLocationInput] = useState("");
+
+  // Cleanly close offcanvas and ensure no stuck backdrops or locked body scrolls
+  const closeOffcanvas = () => {
+    try {
+      const offcanvasEl = document.getElementById("offcanvasRight");
+      if (offcanvasEl) {
+        if (window.bootstrap && window.bootstrap.Offcanvas) {
+          const bsInstance = window.bootstrap.Offcanvas.getInstance(offcanvasEl);
+          if (bsInstance) {
+            bsInstance.hide();
+          }
+        }
+        offcanvasEl.classList.remove("show");
+        offcanvasEl.setAttribute("aria-hidden", "true");
+        offcanvasEl.removeAttribute("aria-modal");
+      }
+    } catch (e) { }
+
+    setTimeout(() => {
+      document.querySelectorAll(".offcanvas-backdrop, .modal-backdrop").forEach((el) => el.remove());
+      document.body.classList.remove("offcanvas-open", "modal-open");
+      document.body.style.removeProperty("overflow");
+      document.body.style.removeProperty("padding-right");
+    }, 120);
+  };
+
+  // Dedicated navigation handler: dismisses offcanvas and immediately redirects
+  const handleNavigateAndClose = (targetPath) => {
+    try {
+      const offcanvasEl = document.getElementById("offcanvasRight");
+      if (offcanvasEl) {
+        if (window.bootstrap && window.bootstrap.Offcanvas) {
+          const bsInstance =
+            window.bootstrap.Offcanvas.getInstance(offcanvasEl) ||
+            new window.bootstrap.Offcanvas(offcanvasEl);
+          if (bsInstance) {
+            bsInstance.hide();
+          }
+        }
+        offcanvasEl.classList.remove("show");
+        offcanvasEl.setAttribute("aria-hidden", "true");
+        offcanvasEl.removeAttribute("aria-modal");
+      }
+    } catch (e) {}
+
+    // Instantly remove backdrop and unlock page scroll
+    document.querySelectorAll(".offcanvas-backdrop, .modal-backdrop").forEach((el) => el.remove());
+    document.body.classList.remove("offcanvas-open", "modal-open");
+    document.body.style.removeProperty("overflow");
+    document.body.style.removeProperty("padding-right");
+
+    // Immediately trigger React Router navigation
+    navigate(targetPath);
+  };
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -315,8 +372,8 @@ const Header = () => {
                     </Link>
                   </li>
                   <li>
-                    <Link className="dropdown-item" to="/quick-order">
-                      🛍️ View Cart &amp; Basket ({cartCount})
+                    <Link className="dropdown-item" to="/checkout">
+                      🛍️ View Basket &amp; Checkout ({cartCount})
                     </Link>
                   </li>
                 </ul>
@@ -365,11 +422,16 @@ const Header = () => {
                     <>
                       <li>
                         <Link className="dropdown-item text-success fw-bold" to="/customer-login">
-                          🔑 Sign In / Register
+                          🔑 Sign In
                         </Link>
                       </li>
                       <li>
-                        <Link className="dropdown-item" to="/MyAccountOrder">
+                        <Link className="dropdown-item fw-semibold" to="/signup">
+                          ✨ Create Account (Sign Up)
+                        </Link>
+                      </li>
+                      <li>
+                        <Link className="dropdown-item text-muted small" to="/MyAccountOrder">
                           📦 Track Past Orders
                         </Link>
                       </li>
@@ -378,7 +440,12 @@ const Header = () => {
                   <li><hr className="dropdown-divider" /></li>
                   <li>
                     <Link className="dropdown-item small text-muted" to="/seller/login">
-                      🏪 Merchant / Seller Login
+                      🏪 Vendor &amp; Admin Portal
+                    </Link>
+                  </li>
+                  <li>
+                    <Link className="dropdown-item small text-muted" to="/vendor/register">
+                      📝 Whitelisted Vendor Registration
                     </Link>
                   </li>
                 </ul>
@@ -396,20 +463,21 @@ const Header = () => {
                 </Link>
               </li>
 
-              {/* ⚡ Quick Checkout Action Button */}
-              {!isSeller && (
-                <li className="nav-item ms-lg-2">
-                  <Link to="/quick-order" className="btn btn-success btn-sm rounded-pill px-3 fw-bold">
-                    ⚡ Checkout ({cartCount})
-                  </Link>
-                </li>
-              )}
+              {/* ⚡ Main Checkout Action Button (Always visible for quick checkout) */}
+              <li className="nav-item ms-lg-2">
+                <Link to="/checkout" className="btn btn-success btn-sm rounded-pill px-3 fw-bold">
+                  ⚡ Checkout ({cartCount})
+                </Link>
+              </li>
 
-              {/* Seller portal indicator */}
-              {isSeller && (
+              {/* Vendor & Admin Portal Management Indicator */}
+              {canModify && (
                 <li className="nav-item ms-lg-2 d-flex align-items-center gap-2">
-                  <Link to="/seller" className="badge bg-warning text-dark p-2 text-decoration-none fw-bold">
-                    🏪 Live Seller Feed
+                  <Link
+                    to="/seller/dashboard"
+                    className={`badge ${isAdmin ? "bg-danger" : "bg-dark"} p-2 text-decoration-none fw-bold shadow-sm`}
+                  >
+                    {isAdmin ? "🛡️ Admin Console" : `🏪 Vendor Dashboard`}
                   </Link>
                   <button onClick={logout} className="btn btn-sm btn-outline-danger py-0 px-2 small">
                     Logout
@@ -498,7 +566,13 @@ const Header = () => {
             </h5>
             <small className="text-muted">Delivering to: {selectedLocation}</small>
           </div>
-          <button type="button" className="btn-close" data-bs-dismiss="offcanvas" aria-label="Close" />
+          <button
+            type="button"
+            className="btn-close"
+            data-bs-dismiss="offcanvas"
+            aria-label="Close"
+            onClick={closeOffcanvas}
+          />
         </div>
 
         <div className="offcanvas-body">
@@ -507,13 +581,13 @@ const Header = () => {
               <span className="fs-1 d-block mb-3">🛍️</span>
               <h5 className="fw-bold">Your basket is empty</h5>
               <p className="text-muted small">Add groceries to enjoy 15-minute express delivery.</p>
-              <Link
-                to="/Shop"
-                className="btn btn-success px-4 rounded-pill mt-2"
-                data-bs-dismiss="offcanvas"
+              <button
+                type="button"
+                onClick={() => handleNavigateAndClose("/Shop")}
+                className="btn btn-success px-4 rounded-pill mt-2 fw-semibold shadow-sm"
               >
-                Browse Groceries
-              </Link>
+                Browse All Items &amp; Groceries →
+              </button>
             </div>
           ) : (
             <>
@@ -595,23 +669,39 @@ const Header = () => {
                 </div>
                 <div className="d-flex justify-content-between mb-2 small">
                   <span className="text-muted">Delivery Fee</span>
-                  <strong className="text-success">{cartTotal >= 499 ? "FREE" : "₹40.00"}</strong>
+                  <strong className="text-success">{deliveryFee === 0 ? "FREE" : `₹${deliveryFee.toFixed(2)}`}</strong>
                 </div>
+                {handlingFee > 0 && (
+                  <div className="d-flex justify-content-between mb-2 small">
+                    <span className="text-muted">Handling Fee</span>
+                    <strong className="text-muted">₹{handlingFee.toFixed(2)}</strong>
+                  </div>
+                )}
 
                 <div className="d-flex justify-content-between border-top pt-2 mb-3">
                   <strong className="fs-6">Total Amount</strong>
                   <strong className="fs-5 text-success">
-                    ₹{(cartTotal + (cartTotal >= 499 ? 0 : 40)).toFixed(2)}
+                    ₹{grandTotal.toFixed(2)}
                   </strong>
                 </div>
 
-                <Link
-                  to="/quick-order"
-                  data-bs-dismiss="offcanvas"
-                  className="btn btn-success btn-lg w-100 fw-bold rounded-pill"
+                <button
+                  type="button"
+                  onClick={() => handleNavigateAndClose("/checkout")}
+                  className="btn btn-success btn-lg w-100 fw-bold rounded-pill shadow-sm py-2 mb-2"
                 >
-                  Proceed to Quick Checkout →
-                </Link>
+                  Proceed to Final Checkout ({cartCount}) →
+                </button>
+
+                <div className="text-center">
+                  <button
+                    type="button"
+                    onClick={() => handleNavigateAndClose("/cart")}
+                    className="btn btn-link btn-sm text-muted text-decoration-none"
+                  >
+                    View detailed cart &amp; apply offers →
+                  </button>
+                </div>
               </div>
             </>
           )}
