@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Grocerylogo from "../images/fdlogo.png";
-import menubanner from "../images/menu-banner.jpg";
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
@@ -17,7 +16,7 @@ const DELIVERY_LOCATIONS = [
 
 const Header = () => {
   const navigate = useNavigate();
-  const { user, isSeller, logout, loginAsGuest } = useAuth();
+const { user, isSeller, logout } = useAuth();
   const {
     cartItems,
     cartCount,
@@ -34,9 +33,6 @@ const Header = () => {
   const [customLocationInput, setCustomLocationInput] = useState("");
 
   // Modal Auth form state
-  const [modalName, setModalName] = useState("");
-  const [modalEmail, setModalEmail] = useState("");
-  const [modalPhone, setModalPhone] = useState("");
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -78,25 +74,25 @@ const Header = () => {
     }
   };
 
-  const handleModalSignUp = (e) => {
-    e.preventDefault();
-    if (!modalName.trim()) {
-      Swal.fire("Notice", "Please enter your name", "warning");
-      return;
-    }
-    loginAsGuest({
-      name: modalName.trim(),
-      email: modalEmail.trim() || `${modalName.toLowerCase().replace(/\s+/g, "")}@example.com`,
-      phone: modalPhone.trim() || "9876543210",
-    });
-    Swal.fire({
-      icon: "success",
-      title: "Welcome!",
-      text: `Signed in as ${modalName}`,
-      timer: 1500,
-      showConfirmButton: false,
-    });
-  };
+  // const handleModalSignUp = (e) => {
+  //   e.preventDefault();
+  //   if (!modalName.trim()) {
+  //     Swal.fire("Notice", "Please enter your name", "warning");
+  //     return;
+  //   }
+  //   loginAsGuest({
+  //     name: modalName.trim(),
+  //     email: modalEmail.trim() || `${modalName.toLowerCase().replace(/\s+/g, "")}@example.com`,
+  //     phone: modalPhone.trim() || "9876543210",
+  //   });
+  //   Swal.fire({
+  //     icon: "success",
+  //     title: "Welcome!",
+  //     text: `Signed in as ${modalName}`,
+  //     timer: 1500,
+  //     showConfirmButton: false,
+  //   });
+  // };
 
   return (
     <div>

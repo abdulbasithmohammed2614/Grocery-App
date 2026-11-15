@@ -22,17 +22,19 @@ const Shop = () => {
   const [viewMode, setViewMode] = useState("grid"); // grid, list
 
   // Sync category & search from URL params
-  useEffect(() => {
-    const cat = searchParams.get("category");
-    const q = searchParams.get("search") || searchParams.get("q");
 
-    if (cat && cat !== selectedCategory) {
-      setSelectedCategory(cat);
-    }
-    if (q !== null && q !== searchQuery) {
-      setSearchQuery(q);
-    }
-  }, [searchParams]);
+useEffect(() => {
+  const cat = searchParams.get("category");
+  const q = searchParams.get("search") || searchParams.get("q");
+
+  if (cat && cat !== selectedCategory) {
+    setSelectedCategory(cat);
+  }
+
+  if (q !== null && q !== searchQuery) {
+    setSearchQuery(q);
+  }
+}, [searchParams, selectedCategory, searchQuery]);
 
   // Fetch products based on category
   useEffect(() => {
