@@ -204,7 +204,14 @@ const Footer = () => {
         <div className="footer-bar mt-4 pt-3 border-top">
           <div className="container text-center">
             <small className="text-muted">
-              © {year} FreshCart Grocery Delivery. All Rights Reserved. Delivered in 10-15 minutes.
+              © {year} Fresh Dukhaana Grocery Delivery. All Rights Reserved. Delivered in 10-15 minutes.
+               <Link
+                    
+                    target="_blank"
+                  >
+                     @HeavenDesignStudio-bhagavandas
+                     ~ For Support : heavendesigns.studio@gmail.com
+                  </Link>
             </small>
           </div>
         </div>
