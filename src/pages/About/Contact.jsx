@@ -1,146 +1,169 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { MagnifyingGlass } from "react-loader-spinner";
 import ScrollToTop from "../ScrollToTop";
+import Swal from "sweetalert2";
 
 const Contact = () => {
-  // loading
-  const [loaderStatus, setLoaderStatus] = useState(true);
-  useEffect(() => {
-    setTimeout(() => {
-      setLoaderStatus(false);
-    }, 1500);
-  }, []);
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    company: "",
+    email: "",
+    phone: "",
+    comments: "",
+  });
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!formData.firstName || !formData.email) {
+      Swal.fire("Required", "Please fill in your name and email address.", "warning");
+      return;
+    }
+
+    Swal.fire({
+      icon: "success",
+      title: "Inquiry Received!",
+      text: `Thank you ${formData.firstName}, our retail partner support team will contact you at ${formData.email} within 24 hours.`,
+      confirmButtonColor: "#0aad0a",
+    });
+
+    setFormData({
+      firstName: "",
+      lastName: "",
+      company: "",
+      email: "",
+      phone: "",
+      comments: "",
+    });
+  };
 
   return (
-    <div>
-      <div>
-        {loaderStatus ? (
-          <div className="loader-container">
-            {/* <PulseLoader loading={loaderStatus} size={50} color="#0aad0a" /> */}
-            <MagnifyingGlass
-              visible={true}
-              height="100"
-              width="100"
-              ariaLabel="magnifying-glass-loading"
-              wrapperStyle={{}}
-              wrapperclassName="magnifying-glass-wrapper"
-              glassColor="#c0efff"
-              color="#0aad0a"
-            />
-          </div>
-        ) : (
-          <>
-           <>
-            <ScrollToTop/>
-            </>
-            <>
-              {/* section */}
-              <section className="my-lg-14 my-8">
-                {/* container */}
-                <div className="container">
-                  <div className="row">
-                    {/* col */}
-                    <div className="offset-lg-2 col-lg-8 col-12">
-                      <div className="mb-8">
-                        {/* heading */}
-                        <h1 className="h3">Retailer Inquiries</h1>
-                        <p className="lead mb-0">
-                          This form is for retailer inquiries only. For all
-                          other customer or shopper support requests, please
-                          visit the links below this form.
-                        </p>
-                      </div>
-                      {/* form */}
-                      <form className="row">
-                        {/* input */}
-                        <div className="col-md-6 mb-3">
-                          <label className="form-label">
-                            {" "}
-                            First Name<span className="text-danger">*</span>
-                          </label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            placeholder="Enter Your First Name"
-                          />
-                        </div>
-                        <div className="col-md-6 mb-3">
-                          {/* input */}
-                          <label className="form-label">
-                            {" "}
-                            Last Name<span className="text-danger">*</span>
-                          </label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            placeholder="Enter Your Last name"
-                          />
-                        </div>
-                        <div className="col-md-12 mb-3">
-                          {/* input */}
-                          <label className="form-label">
-                            {" "}
-                            Company<span className="text-danger">*</span>
-                          </label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            placeholder="Your Company"
-                          />
-                        </div>
-                        <div className="col-md-12 mb-3">
-                          {/* input */}
-                          <label className="form-label"> Title</label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            placeholder="Your Title"
-                          />
-                        </div>
-                        <div className="col-md-6 mb-3">
-                          <label className="form-label">
-                            Email<span className="text-danger">*</span>
-                          </label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            placeholder="Enter Your First Name"
-                          />
-                        </div>
-                        <div className="col-md-6 mb-3">
-                          {/* input */}
-                          <label className="form-label"> Phone</label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            placeholder="Your Phone Number"
-                          />
-                        </div>
-                        <div className="col-md-12 mb-3">
-                          {/* input */}
-                          <label className="form-label"> Comments</label>
-                          <textarea
-                            rows={3}
-                            className="form-control"
-                            placeholder="Additional Comments"
-                            defaultValue={""}
-                          />
-                        </div>
-                        <div className="col-md-12">
-                          {/* btn */}
-                          <Link to="#" className="btn btn-primary">
-                            Submit
-                          </Link>
-                        </div>
-                      </form>
-                    </div>
-                  </div>
+    <div className="bg-light py-5" style={{ minHeight: "80vh" }}>
+      <ScrollToTop />
+      <div className="container">
+        {/* Breadcrumb */}
+        <nav aria-label="breadcrumb" className="mb-4">
+          <ol className="breadcrumb">
+            <li className="breadcrumb-item">
+              <Link to="/">Home</Link>
+            </li>
+            <li className="breadcrumb-item active" aria-current="page">
+              Contact &amp; Support
+            </li>
+          </ol>
+        </nav>
+
+        <div className="row justify-content-center">
+          <div className="col-lg-8 col-12">
+            <div className="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white">
+              <div className="mb-4">
+                <span className="badge bg-success p-2 mb-2">⚡ 24/7 Customer Support</span>
+                <h2 className="fw-bold mb-2">Contact &amp; Retail Inquiries</h2>
+                <p className="text-muted">
+                  Have questions about your quick grocery order, want to partner as a darkstore merchant, or need assistance? Fill out the form below.
+                </p>
+              </div>
+
+              <form onSubmit={handleSubmit} className="row g-3">
+                <div className="col-md-6">
+                  <label className="form-label small fw-semibold text-muted">
+                    First Name <span className="text-danger">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="firstName"
+                    value={formData.firstName}
+                    onChange={handleChange}
+                    className="form-control"
+                    placeholder="e.g. Rahul"
+                    required
+                  />
                 </div>
-              </section>
-            </>
-          </>
-        )}
+
+                <div className="col-md-6">
+                  <label className="form-label small fw-semibold text-muted">
+                    Last Name
+                  </label>
+                  <input
+                    type="text"
+                    name="lastName"
+                    value={formData.lastName}
+                    onChange={handleChange}
+                    className="form-control"
+                    placeholder="e.g. Sharma"
+                  />
+                </div>
+
+                <div className="col-md-6">
+                  <label className="form-label small fw-semibold text-muted">
+                    Email Address <span className="text-danger">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    className="form-control"
+                    placeholder="name@example.com"
+                    required
+                  />
+                </div>
+
+                <div className="col-md-6">
+                  <label className="form-label small fw-semibold text-muted">
+                    Phone Number
+                  </label>
+                  <input
+                    type="tel"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    className="form-control"
+                    placeholder="e.g. 9876543210"
+                  />
+                </div>
+
+                <div className="col-12">
+                  <label className="form-label small fw-semibold text-muted">
+                    Store / Company Name
+                  </label>
+                  <input
+                    type="text"
+                    name="company"
+                    value={formData.company}
+                    onChange={handleChange}
+                    className="form-control"
+                    placeholder="e.g. Fresh Daily Mart (or leave blank if individual customer)"
+                  />
+                </div>
+
+                <div className="col-12">
+                  <label className="form-label small fw-semibold text-muted">
+                    Message / Inquiry Details
+                  </label>
+                  <textarea
+                    rows={4}
+                    name="comments"
+                    value={formData.comments}
+                    onChange={handleChange}
+                    className="form-control"
+                    placeholder="How can we assist you today?"
+                  />
+                </div>
+
+                <div className="col-12 mt-4">
+                  <button type="submit" className="btn btn-success px-5 py-2 fw-bold rounded-pill shadow-sm">
+                    Submit Inquiry →
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

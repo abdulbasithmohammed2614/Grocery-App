@@ -132,6 +132,12 @@ const QuickCheckout = () => {
       createdOrder = data;
     }
 
+    try {
+      const existing = JSON.parse(localStorage.getItem("customer_orders") || "[]");
+      existing.unshift(createdOrder);
+      localStorage.setItem("customer_orders", JSON.stringify(existing));
+    } catch (e) {}
+
     clearCart();
     navigate(`/order-track/${createdOrder.id}`);
   };

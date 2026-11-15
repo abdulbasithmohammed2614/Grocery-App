@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import Swal from "sweetalert2";
 import ScrollToTop from "../ScrollToTop";
 import { useCart } from "../../context/CartContext";
@@ -8,12 +8,31 @@ import assortment from "../../images/assortment-citrus-fruits.png";
 
 const Shop = () => {
   const { cartItems, addToCart, updateQuantity } = useCart();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [selectedCategory, setSelectedCategory] = useState(
+    searchParams.get("category") || "All"
+  );
+  const [searchQuery, setSearchQuery] = useState(
+    searchParams.get("search") || searchParams.get("q") || ""
+  );
   const [sortBy, setSortBy] = useState("featured"); // featured, low-to-high, high-to-low
   const [viewMode, setViewMode] = useState("grid"); // grid, list
+
+  // Sync category & search from URL params
+  useEffect(() => {
+    const cat = searchParams.get("category");
+    const q = searchParams.get("search") || searchParams.get("q");
+
+    if (cat && cat !== selectedCategory) {
+      setSelectedCategory(cat);
+    }
+    if (q !== null && q !== searchQuery) {
+      setSearchQuery(q);
+    }
+  }, [searchParams]);
 
   // Fetch products based on category
   useEffect(() => {
@@ -32,6 +51,37 @@ const Shop = () => {
     };
   }, [selectedCategory]);
 
+  const handleCategorySelect = (catName) => {
+    setSelectedCategory(catName);
+    const newParams = new URLSearchParams(searchParams);
+    if (catName === "All") {
+      newParams.delete("category");
+    } else {
+      newParams.set("category", catName);
+    }
+    setSearchParams(newParams);
+  };
+
+  const handleSearchChange = (e) => {
+    const val = e.target.value;
+    setSearchQuery(val);
+    const newParams = new URLSearchParams(searchParams);
+    if (val.trim()) {
+      newParams.set("search", val);
+    } else {
+      newParams.delete("search");
+    }
+    setSearchParams(newParams);
+  };
+
+  const handleClearSearch = () => {
+    setSearchQuery("");
+    const newParams = new URLSearchParams(searchParams);
+    newParams.delete("search");
+    newParams.delete("q");
+    setSearchParams(newParams);
+  };
+
   const handleAddProduct = (product) => {
     addToCart(product, 1);
     Swal.fire({
@@ -48,8 +98,19 @@ const Shop = () => {
     return item ? item.quantity : 0;
   };
 
+  // Filter products by search query
+  const filteredProducts = products.filter((p) => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    const nameMatch = (p.name || "").toLowerCase().includes(q);
+    const catMatch = (p.category || "").toLowerCase().includes(q);
+    const badgeMatch = (p.badge || "").toLowerCase().includes(q);
+    const unitMatch = (p.unit || "").toLowerCase().includes(q);
+    return nameMatch || catMatch || badgeMatch || unitMatch;
+  });
+
   // Sort products
-  const sortedProducts = [...products].sort((a, b) => {
+  const sortedProducts = [...filteredProducts].sort((a, b) => {
     if (sortBy === "low-to-high") return Number(a.price) - Number(b.price);
     if (sortBy === "high-to-low") return Number(b.price) - Number(a.price);
     return 0; // featured
@@ -67,7 +128,7 @@ const Shop = () => {
               <Link to="/">Home</Link>
             </li>
             <li className="breadcrumb-item">
-              <Link to="/Shop">Shop</Link>
+              <Link to="/Shop" onClick={() => handleCategorySelect("All")}>Shop</Link>
             </li>
             <li className="breadcrumb-item active" aria-current="page">
               {selectedCategory}
@@ -80,7 +141,7 @@ const Shop = () => {
           <div className="row align-items-center">
             <div className="col-md-8">
               <span className="badge bg-success p-2 mb-2">⚡ 15-Minute Instant Delivery</span>
-              <h2 className="fw-bold text-dark mb-1">Fresh Groceries & Daily Essentials</h2>
+              <h2 className="fw-bold text-dark mb-1">Fresh Groceries &amp; Daily Essentials</h2>
               <p className="text-muted mb-0">
                 Shop from 1000+ local store items at store prices, delivered directly to your doorstep.
               </p>
@@ -103,7 +164,7 @@ const Shop = () => {
                 <h5 className="fw-bold mb-0">Categories</h5>
                 {selectedCategory !== "All" && (
                   <button
-                    onClick={() => setSelectedCategory("All")}
+                    onClick={() => handleCategorySelect("All")}
                     className="btn btn-sm btn-link text-success p-0 text-decoration-none small fw-bold"
                   >
                     Reset
@@ -117,7 +178,7 @@ const Shop = () => {
                   return (
                     <button
                       key={cat.id}
-                      onClick={() => setSelectedCategory(cat.name)}
+                      onClick={() => handleCategorySelect(cat.name)}
                       className={`list-group-item list-group-item-action border-0 px-3 py-2 rounded-3 mb-1 d-flex justify-content-between align-items-center ${
                         isSelected ? "bg-success text-white fw-bold shadow-sm" : "text-dark"
                       }`}
@@ -151,17 +212,42 @@ const Shop = () => {
 
           {/* Right Column: Products Listing */}
           <div className="col-lg-9">
-            {/* Filter and Sort Toolbar */}
+            {/* Live Search & Filter Bar */}
             <div className="card border-0 shadow-sm rounded-4 p-3 mb-4 bg-white">
-              <div className="d-flex flex-wrap justify-content-between align-items-center gap-2">
-                <div>
-                  <span className="text-muted small">
-                    Showing <strong className="text-dark">{sortedProducts.length}</strong> products in{" "}
-                    <span className="text-success fw-bold">"{selectedCategory}"</span>
-                  </span>
+              <div className="row g-3 align-items-center">
+                {/* Search Input */}
+                <div className="col-md-5">
+                  <div className="input-group">
+                    <span className="input-group-text bg-light border-end-0">
+                      <i className="fas fa-search text-muted"></i>
+                    </span>
+                    <input
+                      type="text"
+                      className="form-control border-start-0 bg-light"
+                      placeholder="Search milk, bread, snacks..."
+                      value={searchQuery}
+                      onChange={handleSearchChange}
+                    />
+                    {searchQuery && (
+                      <button
+                        className="btn btn-light border"
+                        type="button"
+                        onClick={handleClearSearch}
+                        title="Clear Search"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
                 </div>
 
-                <div className="d-flex align-items-center gap-3">
+                {/* Showing info & Sort / View toggles */}
+                <div className="col-md-7 d-flex flex-wrap justify-content-md-end align-items-center gap-3">
+                  <span className="text-muted small">
+                    Showing <strong className="text-dark">{sortedProducts.length}</strong> items
+                    {searchQuery && <span> for "<span className="text-success fw-bold">{searchQuery}</span>"</span>}
+                  </span>
+
                   {/* Sorting dropdown */}
                   <div className="d-flex align-items-center gap-2">
                     <label className="text-muted small fw-semibold mb-0">Sort:</label>
@@ -206,16 +292,24 @@ const Shop = () => {
               </div>
             ) : sortedProducts.length === 0 ? (
               <div className="card border-0 shadow-sm rounded-4 p-5 text-center bg-white">
-                <span className="fs-1 d-block mb-2">🛒</span>
+                <span className="fs-1 d-block mb-2">🔍</span>
                 <h5 className="fw-bold">No products found</h5>
-                <p className="text-muted small">Try selecting another category from the sidebar.</p>
-                <div>
-                  <button
-                    onClick={() => setSelectedCategory("All")}
-                    className="btn btn-sm btn-success px-4"
-                  >
-                    View All Products
-                  </button>
+                <p className="text-muted small">
+                  {searchQuery
+                    ? `No matching grocery items found for "${searchQuery}".`
+                    : "Try selecting another category from the sidebar."}
+                </p>
+                <div className="d-flex justify-content-center gap-2">
+                  {searchQuery && (
+                    <button onClick={handleClearSearch} className="btn btn-sm btn-outline-success px-4">
+                      Clear Search Filter
+                    </button>
+                  )}
+                  {selectedCategory !== "All" && (
+                    <button onClick={() => handleCategorySelect("All")} className="btn btn-sm btn-success px-4">
+                      View All Products
+                    </button>
+                  )}
                 </div>
               </div>
             ) : viewMode === "grid" ? (
@@ -258,21 +352,16 @@ const Shop = () => {
                           {product.unit && (
                             <small className="text-muted d-block mb-2">📦 {product.unit}</small>
                           )}
-
-                          <div className="mb-2">
-                            <small className="text-warning">
-                              {"★".repeat(Math.floor(product.rating || 4))}
-                            </small>
-                            <span className="text-muted small ms-1">
-                              {product.rating || 4.5} ({product.reviews || 50})
-                            </span>
+                          <div className="small text-warning mb-3">
+                            {"★".repeat(Math.floor(product.rating || 4))}{" "}
+                            <span className="text-muted">({product.reviews || 50})</span>
                           </div>
                         </div>
 
-                        {/* Price & Action */}
-                        <div className="d-flex justify-content-between align-items-center pt-2 border-top mt-2">
+                        {/* Price & Add to Cart button */}
+                        <div className="d-flex justify-content-between align-items-center pt-2 border-top">
                           <div>
-                            <span className="fw-bold fs-6 text-dark">₹{product.price}</span>
+                            <span className="fw-bold fs-5 text-dark">₹{product.price}</span>
                             {product.old_price && (
                               <span className="text-decoration-line-through text-muted small ms-2">
                                 ₹{product.old_price}
@@ -285,15 +374,11 @@ const Shop = () => {
                               type="button"
                               onClick={() => handleAddProduct(product)}
                               className="btn btn-sm btn-outline-success fw-bold px-3 rounded-pill"
-                              style={{ borderColor: "#0aad0a", color: "#0aad0a" }}
                             >
                               + ADD
                             </button>
                           ) : (
-                            <div
-                              className="d-flex align-items-center bg-success text-white rounded-pill px-2 py-1"
-                              style={{ backgroundColor: "#0aad0a" }}
-                            >
+                            <div className="d-flex align-items-center bg-success text-white rounded-pill px-2 py-1">
                               <button
                                 type="button"
                                 className="btn btn-sm text-white p-0 px-2 fw-bold"
