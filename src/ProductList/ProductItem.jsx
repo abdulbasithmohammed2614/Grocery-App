@@ -1,13 +1,27 @@
 import React, { useState, useEffect } from "react";
 import Swal from "sweetalert2";
 import { useCart } from "../context/CartContext";
-import { fetchProductsFromDb, INITIAL_CATEGORIES } from "../services/dataService";
+import { fetchProductsFromDb, fetchCategoriesFromDb, INITIAL_CATEGORIES } from "../services/dataService";
 
 const ProductItem = () => {
   const { cartItems, addToCart, updateQuantity } = useCart();
   const [activeCategory, setActiveCategory] = useState("All");
+  const [categories, setCategories] = useState(INITIAL_CATEGORIES);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Fetch live categories from DB
+  useEffect(() => {
+    let isMounted = true;
+    fetchCategoriesFromDb().then((cats) => {
+      if (isMounted && Array.isArray(cats) && cats.length > 0) {
+        setCategories(cats);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -62,7 +76,7 @@ const ProductItem = () => {
 
         {/* Dynamic Category Tabs Filter */}
         <div className="d-flex justify-content-center flex-wrap gap-2 mb-5">
-          {INITIAL_CATEGORIES.map((cat) => (
+          {categories.map((cat) => (
             <button
               key={cat.id}
               onClick={() => setActiveCategory(cat.name)}

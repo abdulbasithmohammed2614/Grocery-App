@@ -1,5 +1,5 @@
 /**
- * Automated Test Suite for Blinkit-Style Quick Commerce Grocery Backend
+ * Automated Test Suite for FreshCart Quick Commerce Grocery Backend
  * Tests all API endpoints, validations, Supabase DB operations, and status lifecycle.
  */
 
@@ -48,7 +48,7 @@ const request = (method, path, body = null) => {
 // Test Suite Runner
 const runTests = async () => {
   console.log("=================================================================");
-  console.log("  BLINKIT QUICK-COMMERCE BACKEND TEST SUITE");
+  console.log("  FRESHCART QUICK-COMMERCE BACKEND TEST SUITE");
   console.log("=================================================================\n");
 
   const results = [];
@@ -126,7 +126,7 @@ const runTests = async () => {
       assert(res.body.user.isGuest === false, "Registered customer is not guest");
     });
 
-    await test("5. Customer Auth: Instant Guest Login (Blinkit Style)", async () => {
+    await test("5. Customer Auth: Instant Guest Login (Express Fast)", async () => {
       const res = await request("POST", "/api/auth/guest-login", {
         name: "Pooja Verma",
         phone: "9876543210",
@@ -196,7 +196,7 @@ const runTests = async () => {
     });
 
     // -------------------------------------------------------------
-    // 4. Order Placement Flow (Blinkit 1-Page Checkout)
+    // 4. Order Placement Flow (FreshCart 1-Page Checkout)
     // -------------------------------------------------------------
     await test("10. Place New Quick Order (Cash on Delivery)", async () => {
       const orderPayload = {
@@ -318,11 +318,14 @@ const runTests = async () => {
       assert(res.body.products.length > 0, "Products count must be > 0");
     });
 
-    await test("20. Fetch Category Tabs List", async () => {
+    await test("20. Fetch Category Tabs List with Dynamic Database Counts", async () => {
       const res = await request("GET", "/api/categories");
       assert(res.status === 200, `Expected 200 but got ${res.status}`);
       assert(Array.isArray(res.body.categories), "Categories must be an array");
       assert(res.body.categories.length > 0, "Categories count must be > 0");
+      assert(res.body.categories.every(c => typeof c.count === "number"), "Every category must have dynamic numeric count");
+      const allCategory = res.body.categories.find(c => c.name === "All");
+      assert(allCategory && allCategory.count > 0, "'All' category must exist with total product count");
     });
 
     await test("21. Fetch Stores Directory for Stores Tab", async () => {

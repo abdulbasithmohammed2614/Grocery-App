@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { API_BASE_URL } from "../utils/apiConfig";
 
 const AuthContext = createContext(null);
 
@@ -58,15 +59,18 @@ export const AuthProvider = ({ children }) => {
 
     // Try backend verification if running
     try {
-      const res = await fetch("http://localhost:5000/api/auth/seller-login", {
+      const res = await fetch(`${API_BASE_URL}/api/auth/seller-login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setUser(data.user);
-        return { success: true, user: data.user };
+      const cType = res.headers.get("content-type") || "";
+      if (cType.includes("application/json")) {
+        const data = await res.json();
+        if (res.ok && data.success) {
+          setUser(data.user);
+          return { success: true, user: data.user };
+        }
       }
     } catch (e) {
       // Backend offline, fallback to check
@@ -101,7 +105,7 @@ export const AuthProvider = ({ children }) => {
     };
   };
 
-  // Guest Customer Login (Blinkit style fast checkout)
+  // Guest Customer Login (Express fast checkout)
   const loginAsGuest = (guestData = {}) => {
     const guestUser = {
       name: guestData.name?.trim() || "Guest Customer",

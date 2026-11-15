@@ -115,7 +115,7 @@ const CustomerLogin = () => {
             </div>
           )}
 
-          {/* TAB 1: GUEST CHECKOUT (Blinkit Style) */}
+          {/* TAB 1: GUEST CHECKOUT (Express 1-Click) */}
           {activeTab === "guest" ? (
             <div>
               <div className="p-3 bg-light rounded-3 mb-3 border">

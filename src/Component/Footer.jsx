@@ -131,17 +131,12 @@ const Footer = () => {
                   </li>
                   <li className="mb-2">
                     <Link to="/quick-order" className="text-decoration-none text-muted">
-                      <i className="fa fa-angle-right me-2 text-success" /> ⚡ 1-Click Quick Order
+                      <i className="fa fa-angle-right me-2 text-success" /> ⚡ Express Checkout
                     </Link>
                   </li>
                   <li className="mb-2">
                     <Link to="/ShopWishList" className="text-decoration-none text-muted">
                       <i className="fa fa-angle-right me-2 text-success" /> My Saved Wishlist
-                    </Link>
-                  </li>
-                  <li className="mb-2">
-                    <Link to="/ShopCart" className="text-decoration-none text-muted">
-                      <i className="fa fa-angle-right me-2 text-success" /> View Cart
                     </Link>
                   </li>
                   <li className="mb-2">

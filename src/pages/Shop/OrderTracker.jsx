@@ -146,7 +146,7 @@ const OrderTracker = () => {
 
   return (
     <div className="container py-4" style={{ maxWidth: "860px", minHeight: "80vh" }}>
-      {/* Blinkit-Style ETA Banner */}
+      {/* FreshCart Express ETA Banner */}
       <div
         className="card border-0 shadow-sm p-4 mb-4 text-white"
         style={{
@@ -217,7 +217,12 @@ const OrderTracker = () => {
                           isCurrent ? "text-success fw-bold fs-5" : isPassed ? "text-dark" : "text-muted"
                         }`}
                       >
-                        {step.label} {isCurrent && <span className="badge bg-success ms-2">In Progress</span>}
+                        {step.label}{" "}
+                        {isCurrent && (
+                          <span className="badge bg-success ms-2">
+                            {step.key === "DELIVERED" ? "Completed" : "In Progress"}
+                          </span>
+                        )}
                       </h6>
                       <small className="text-muted">{step.desc}</small>
                     </div>

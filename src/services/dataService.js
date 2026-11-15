@@ -195,7 +195,7 @@ export const INITIAL_PRODUCTS = [
 export const INITIAL_STORES = [
   {
     id: "st1",
-    name: "Blinkit Darkstore - Indiranagar",
+    name: "FreshCart Express Darkstore - Indiranagar",
     type: "Express Quick Delivery",
     location: "100ft Road, Indiranagar, Bangalore",
     delivery_time: "10-15 mins",
@@ -273,17 +273,41 @@ export const INITIAL_STORES = [
   },
 ];
 
-// Fallback dummy categories
-export const INITIAL_CATEGORIES = [
-  { id: "c1", name: "All", count: INITIAL_PRODUCTS.length },
-  { id: "c2", name: "Dairy, Bread & Eggs", count: 18 },
-  { id: "c3", name: "Snacks & Munchies", count: 24 },
-  { id: "c4", name: "Fruits & Vegetables", count: 32 },
-  { id: "c5", name: "Bakery & Biscuits", count: 15 },
-  { id: "c6", name: "Instant Food", count: 12 },
-  { id: "c7", name: "Cold Drinks & Juices", count: 14 },
-  { id: "c8", name: "Atta, Rice & Dal", count: 28 },
+// Dynamic category count calculator from an array of products (removes all hardcoded counts)
+export const computeCategoryCounts = (productsList = []) => {
+  const counts = {};
+  if (Array.isArray(productsList)) {
+    productsList.forEach((p) => {
+      if (p && p.category) {
+        counts[p.category] = (counts[p.category] || 0) + 1;
+      }
+    });
+  }
+  return counts;
+};
+
+export const BASE_CATEGORIES = [
+  { id: "c1", name: "All", icon: "🛒" },
+  { id: "c2", name: "Dairy, Bread & Eggs", icon: "🥛" },
+  { id: "c3", name: "Snacks & Munchies", icon: "🍿" },
+  { id: "c4", name: "Fruits & Vegetables", icon: "🥦" },
+  { id: "c5", name: "Bakery & Biscuits", icon: "🍞" },
+  { id: "c6", name: "Instant Food", icon: "🍜" },
+  { id: "c7", name: "Cold Drinks & Juices", icon: "🥤" },
+  { id: "c8", name: "Atta, Rice & Dal", icon: "🌾" },
 ];
+
+// Dynamically compute category counts without any hardcoded numbers
+export const getDynamicCategories = (productsList = INITIAL_PRODUCTS) => {
+  const counts = computeCategoryCounts(productsList);
+  return BASE_CATEGORIES.map((cat) => ({
+    ...cat,
+    count: cat.name === "All" ? productsList.length : (counts[cat.name] || 0),
+  }));
+};
+
+// Fallback categories dynamically computed from initial products
+export const INITIAL_CATEGORIES = getDynamicCategories(INITIAL_PRODUCTS);
 
 // Data service helpers to fetch from Supabase (or fallback)
 export const fetchProductsFromDb = async (category = "All") => {
@@ -321,12 +345,47 @@ export const fetchStoresFromDb = async () => {
 
 export const fetchCategoriesFromDb = async () => {
   try {
-    const { data, error } = await supabase.from("categories").select("*");
-    if (!error && Array.isArray(data) && data.length > 0) {
-      return data;
-    }
+    // 1. Fetch real products from Supabase to count actual items per category in database
+    const { data: dbProducts, error: prodErr } = await supabase
+      .from("products")
+      .select("id, category");
+
+    const products =
+      !prodErr && Array.isArray(dbProducts) && dbProducts.length > 0
+        ? dbProducts
+        : INITIAL_PRODUCTS;
+
+    const counts = computeCategoryCounts(products);
+
+    // 2. Fetch category list
+    const { data: dbCategories, error: catErr } = await supabase
+      .from("categories")
+      .select("id, name, icon");
+
+    const rawCategories =
+      !catErr && Array.isArray(dbCategories) && dbCategories.length > 0
+        ? dbCategories
+        : BASE_CATEGORIES.filter((c) => c.name !== "All");
+
+    // 3. Return dynamic categories with live counts directly from DB
+    return [
+      {
+        id: "cat-all",
+        name: "All",
+        count: products.length,
+        icon: "🛒",
+      },
+      ...rawCategories
+        .filter((c) => c.name !== "All")
+        .map((cat) => ({
+          id: cat.id,
+          name: cat.name,
+          icon: cat.icon || "📦",
+          count: counts[cat.name] || 0,
+        })),
+    ];
   } catch (e) {
-    // fallback
+    console.error("Error computing dynamic category counts from DB:", e);
+    return getDynamicCategories(INITIAL_PRODUCTS);
   }
-  return INITIAL_CATEGORIES;
 };

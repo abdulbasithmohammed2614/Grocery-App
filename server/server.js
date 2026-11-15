@@ -5,12 +5,23 @@ const dotenv = require("dotenv");
 const crypto = require("crypto");
 const path = require("path");
 const { createClient } = require("@supabase/supabase-js");
+const {
+  loadSecretsFromSupabase,
+  getSecret,
+  getPublicSecrets,
+  setSecret,
+} = require("./services/secretService");
 
 // Load environment variables from server/.env or root .env
 dotenv.config({ path: path.resolve(__dirname, ".env") });
 if (!process.env.SUPABASE_URL) {
   dotenv.config({ path: path.resolve(__dirname, "../.env") });
 }
+
+// Pre-load secrets from Supabase into memory & process.env
+loadSecretsFromSupabase().catch((err) =>
+  console.log("[Secrets] Background initialization notice:", err.message)
+);
 
 const app = express();
 
@@ -46,7 +57,7 @@ const VALID_STATUSES = [
 app.get("/", (req, res) => {
   res.json({
     status: "online",
-    message: "Blinkit Quick-Commerce Grocery API is running",
+    message: "FreshCart Quick-Commerce Grocery API is running",
     timestamp: new Date().toISOString(),
   });
 });
@@ -68,20 +79,23 @@ const SELLER_EMAIL = process.env.SELLER_EMAIL || "seller@grocery.com";
 const SELLER_PASSWORD = process.env.SELLER_PASSWORD || "storepassword123";
 
 // Seller login
-app.post("/api/auth/seller-login", (req, res) => {
+app.post("/api/auth/seller-login", async (req, res) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
     return res.status(400).json({ success: false, message: "Email and password are required" });
   }
 
-  if (email.trim().toLowerCase() === SELLER_EMAIL.toLowerCase() && password === SELLER_PASSWORD) {
+  const sellerEmail = await getSecret("SELLER_EMAIL", "seller@grocery.com");
+  const sellerPassword = await getSecret("SELLER_PASSWORD", "storepassword123");
+
+  if (email.trim().toLowerCase() === sellerEmail.toLowerCase() && password === sellerPassword) {
     return res.json({
       success: true,
       message: "Seller authenticated successfully",
       user: {
         name: "FreshCart Central Store",
-        email: SELLER_EMAIL,
+        email: sellerEmail,
         role: "seller",
         isGuest: false,
         storeId: "store_blr_001",
@@ -375,7 +389,7 @@ const FALLBACK_CATEGORIES = [
 ];
 
 const FALLBACK_STORES = [
-  { id: "st1", name: "Blinkit Darkstore - Indiranagar", delivery_time: "10-15 mins", rating: 4.9, min_order: 99 },
+  { id: "st1", name: "FreshCart Express Darkstore - Indiranagar", delivery_time: "10-15 mins", rating: 4.9, min_order: 99 },
   { id: "st2", name: "FreshCart Daily Supermarket", delivery_time: "15-20 mins", rating: 4.8, min_order: 149 },
   { id: "st3", name: "Nature's Basket Organic Express", delivery_time: "15-25 mins", rating: 4.9, min_order: 199 },
 ];
@@ -405,13 +419,64 @@ app.get("/api/products", async (req, res) => {
 
 app.get("/api/categories", async (req, res) => {
   try {
-    const { data, error } = await supabase.from("categories").select("*");
-    if (!error && Array.isArray(data) && data.length > 0) {
-      return res.json({ success: true, count: data.length, categories: data });
-    }
-  } catch (e) {}
+    // 1. Fetch real products to compute live item counts per category in database
+    const { data: dbProducts } = await supabase.from("products").select("id, category");
+    const products = dbProducts && dbProducts.length > 0 ? dbProducts : FALLBACK_PRODUCTS;
 
-  res.json({ success: true, count: FALLBACK_CATEGORIES.length, categories: FALLBACK_CATEGORIES });
+    const counts = {};
+    products.forEach((p) => {
+      if (p.category) counts[p.category] = (counts[p.category] || 0) + 1;
+    });
+
+    const { data: dbCategories } = await supabase.from("categories").select("id, name, icon");
+    const baseCats =
+      dbCategories && dbCategories.length > 0
+        ? dbCategories
+        : [
+            { id: "c2", name: "Dairy, Bread & Eggs", icon: "🥛" },
+            { id: "c3", name: "Snacks & Munchies", icon: "🍿" },
+            { id: "c4", name: "Fruits & Vegetables", icon: "🥦" },
+            { id: "c5", name: "Bakery & Biscuits", icon: "🍞" },
+            { id: "c6", name: "Instant Food", icon: "🍜" },
+            { id: "c7", name: "Cold Drinks & Juices", icon: "🥤" },
+            { id: "c8", name: "Atta, Rice & Dal", icon: "🌾" },
+          ];
+
+    const dynamicCategories = [
+      { id: "c1", name: "All", count: products.length, icon: "🛒" },
+      ...baseCats
+        .filter((c) => c.name !== "All")
+        .map((c) => ({
+          id: c.id,
+          name: c.name,
+          icon: c.icon || "📦",
+          count: counts[c.name] || 0,
+        })),
+    ];
+
+    return res.json({
+      success: true,
+      count: dynamicCategories.length,
+      categories: dynamicCategories,
+    });
+  } catch (e) {
+    // fallback
+  }
+
+  // Dynamic fallback computed from FALLBACK_PRODUCTS
+  const fallbackCounts = {};
+  FALLBACK_PRODUCTS.forEach((p) => {
+    if (p.category) fallbackCounts[p.category] = (fallbackCounts[p.category] || 0) + 1;
+  });
+  const fallbackCats = [
+    { id: "c1", name: "All", count: FALLBACK_PRODUCTS.length },
+    { id: "c2", name: "Dairy, Bread & Eggs", count: fallbackCounts["Dairy, Bread & Eggs"] || 0 },
+    { id: "c3", name: "Snacks & Munchies", count: fallbackCounts["Snacks & Munchies"] || 0 },
+    { id: "c4", name: "Fruits & Vegetables", count: fallbackCounts["Fruits & Vegetables"] || 0 },
+    { id: "c5", name: "Bakery & Biscuits", count: fallbackCounts["Bakery & Biscuits"] || 0 },
+    { id: "c6", name: "Instant Food", count: fallbackCounts["Instant Food"] || 0 },
+  ];
+  res.json({ success: true, count: fallbackCats.length, categories: fallbackCats });
 });
 
 app.get("/api/stores", async (req, res) => {
@@ -438,16 +503,24 @@ app.post("/api/payment/create-order", async (req, res) => {
       return res.status(400).json({ success: false, message: "Invalid payment amount" });
     }
 
-    if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
-      return res.status(500).json({
+    const keyId = await getSecret("RAZORPAY_KEY_ID");
+    const keySecret = await getSecret("RAZORPAY_KEY_SECRET");
+
+    if (
+      !keyId ||
+      !keySecret ||
+      keyId.includes("YourRazorpayKeyId")
+    ) {
+      return res.status(400).json({
         success: false,
-        message: "Razorpay keys are not configured in environment",
+        message:
+          "Razorpay API Keys are not configured in your Supabase 'app_secrets' table or .env file yet. Please set valid RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET from https://dashboard.razorpay.com/app/keys",
       });
     }
 
     const razorpay = new Razorpay({
-      key_id: process.env.RAZORPAY_KEY_ID,
-      key_secret: process.env.RAZORPAY_KEY_SECRET,
+      key_id: keyId,
+      key_secret: keySecret,
     });
 
     const order = await razorpay.orders.create({
@@ -459,7 +532,7 @@ app.post("/api/payment/create-order", async (req, res) => {
     res.json({
       success: true,
       order,
-      key: process.env.RAZORPAY_KEY_ID,
+      key: keyId,
     });
   } catch (error) {
     console.error("Order creation error:", error);
@@ -468,7 +541,7 @@ app.post("/api/payment/create-order", async (req, res) => {
 });
 
 // Verify Razorpay payment
-app.post("/api/payment/verify", (req, res) => {
+app.post("/api/payment/verify", async (req, res) => {
   try {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
 
@@ -476,12 +549,14 @@ app.post("/api/payment/verify", (req, res) => {
       return res.status(400).json({ success: false, message: "Missing payment details" });
     }
 
-    if (!process.env.RAZORPAY_KEY_SECRET) {
-      return res.status(500).json({ success: false, message: "RAZORPAY_KEY_SECRET is not configured" });
+    const keySecret = await getSecret("RAZORPAY_KEY_SECRET");
+
+    if (!keySecret || keySecret.includes("YourRazorpayKeySecret")) {
+      return res.status(500).json({ success: false, message: "RAZORPAY_KEY_SECRET is not configured in Supabase or .env" });
     }
 
     const generatedSignature = crypto
-      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+      .createHmac("sha256", keySecret)
       .update(`${razorpay_order_id}|${razorpay_payment_id}`)
       .digest("hex");
 
@@ -510,16 +585,55 @@ app.post("/api/payment/verify", (req, res) => {
   }
 });
 
+// ==========================================
+// 5. Dynamic Secrets API Endpoints
+// ==========================================
+
+// Get public client-safe secrets (e.g. Razorpay key for checkout modal)
+app.get("/api/secrets/public", async (req, res) => {
+  try {
+    const publicSecrets = await getPublicSecrets();
+    res.json({ success: true, secrets: publicSecrets });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Failed to fetch public secrets" });
+  }
+});
+
+// Check status of secrets (safe masked audit endpoint)
+app.get("/api/secrets/status", async (req, res) => {
+  try {
+    const rzpKey = await getSecret("RAZORPAY_KEY_ID");
+    const rzpSecret = await getSecret("RAZORPAY_KEY_SECRET");
+    const sellerEmail = await getSecret("SELLER_EMAIL", "seller@grocery.com");
+
+    const isRzpConfigured =
+      Boolean(rzpKey) &&
+      Boolean(rzpSecret) &&
+      !rzpKey.includes("YourRazorpayKeyId");
+
+    res.json({
+      success: true,
+      storage: "Supabase PostgreSQL (public.app_secrets) with .env fallback",
+      razorpay_ready: isRzpConfigured,
+      razorpay_key_preview: rzpKey ? `${rzpKey.substring(0, 10)}...` : "Not configured",
+      seller_email: sellerEmail,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Failed to check secrets status" });
+  }
+});
+
 // Catch-all 404
 app.use((req, res) => {
   res.status(404).json({ success: false, message: `Route not found: ${req.method} ${req.url}` });
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.SERVER_PORT || process.env.PORT || 5000;
 
-if (process.env.NODE_ENV !== "test") {
+if (process.env.NODE_ENV !== "test" && !process.env.VERCEL) {
   app.listen(PORT, () => {
-    console.log(`Blinkit Grocery API running on http://localhost:${PORT}`);
+    console.log(`FreshCart Grocery API running on http://localhost:${PORT}`);
   });
 }
 

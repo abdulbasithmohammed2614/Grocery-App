@@ -14,7 +14,6 @@ import AboutUs from "./pages/About/AboutUs";
 import Contact from "./pages/About/Contact";
 // Shop pages
 import Shop from "./pages/Shop/Shop";
-import ShopCart from "./pages/Shop/ShopCart";
 import QuickCheckout from "./pages/Shop/QuickCheckout";
 import OrderTracker from "./pages/Shop/OrderTracker";
 import ShopWishList from "./pages/Shop/ShopWishList";
@@ -36,11 +35,12 @@ const App = () => {
         <Routes>
           <Route path="/" element={<Home />} />
 
-          {/* Shop & Quick Delivery */}
+          {/* Shop & Single Unified Quick Checkout */}
           <Route path="/Shop" element={<Shop />} />
           <Route path="/ShopWishList" element={<ShopWishList />} />
-          <Route path="/ShopCart" element={<ShopCart />} />
-          <Route path="/ShopCheckOut" element={<QuickCheckout />} />
+          <Route path="/ShopCart" element={<Navigate to="/quick-order" replace />} />
+          <Route path="/ShopCheckOut" element={<Navigate to="/quick-order" replace />} />
+          <Route path="/checkout" element={<Navigate to="/quick-order" replace />} />
           <Route path="/quick-order" element={<QuickCheckout />} />
           <Route path="/order-track/:orderId" element={<OrderTracker />} />
 

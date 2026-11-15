@@ -158,7 +158,7 @@ const MyAccountOrder = () => {
                   className="list-group-item list-group-item-action border-0 px-3 py-2 rounded-3 mb-1"
                 >
                   <i className="fas fa-bolt me-2 text-warning" />
-                  Quick Checkout
+                  Express Checkout
                 </Link>
                 {user && (
                   <button

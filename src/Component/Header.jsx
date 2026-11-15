@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Grocerylogo from "../images/fdlogo.png";
-import menubanner from "../images/menu-banner.jpg";
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
@@ -17,7 +16,7 @@ const DELIVERY_LOCATIONS = [
 
 const Header = () => {
   const navigate = useNavigate();
-  const { user, isSeller, logout, loginAsGuest } = useAuth();
+  const { user, isSeller, logout } = useAuth();
   const {
     cartItems,
     cartCount,
@@ -32,11 +31,6 @@ const Header = () => {
     return localStorage.getItem("user_delivery_location") || "Indiranagar, Bangalore (560038)";
   });
   const [customLocationInput, setCustomLocationInput] = useState("");
-
-  // Modal Auth form state
-  const [modalName, setModalName] = useState("");
-  const [modalEmail, setModalEmail] = useState("");
-  const [modalPhone, setModalPhone] = useState("");
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -76,26 +70,6 @@ const Header = () => {
         showConfirmButton: false,
       });
     }
-  };
-
-  const handleModalSignUp = (e) => {
-    e.preventDefault();
-    if (!modalName.trim()) {
-      Swal.fire("Notice", "Please enter your name", "warning");
-      return;
-    }
-    loginAsGuest({
-      name: modalName.trim(),
-      email: modalEmail.trim() || `${modalName.toLowerCase().replace(/\s+/g, "")}@example.com`,
-      phone: modalPhone.trim() || "9876543210",
-    });
-    Swal.fire({
-      icon: "success",
-      title: "Welcome!",
-      text: `Signed in as ${modalName}`,
-      timer: 1500,
-      showConfirmButton: false,
-    });
   };
 
   return (
@@ -341,13 +315,8 @@ const Header = () => {
                     </Link>
                   </li>
                   <li>
-                    <Link className="dropdown-item" to="/ShopCart">
-                      🛍️ Shopping Cart ({cartCount})
-                    </Link>
-                  </li>
-                  <li>
-                    <Link className="dropdown-item text-success fw-semibold" to="/quick-order">
-                      ⚡ Quick Checkout
+                    <Link className="dropdown-item" to="/quick-order">
+                      🛍️ View Cart &amp; Basket ({cartCount})
                     </Link>
                   </li>
                 </ul>
@@ -396,7 +365,7 @@ const Header = () => {
                     <>
                       <li>
                         <Link className="dropdown-item text-success fw-bold" to="/customer-login">
-                          ⚡ Sign In / Guest Checkout
+                          🔑 Sign In / Register
                         </Link>
                       </li>
                       <li>
@@ -582,21 +551,30 @@ const Header = () => {
                       </div>
 
                       <div className="col-4 text-end">
-                        <div className="btn-group btn-group-sm mb-1">
+                        <div className="d-inline-flex align-items-center border rounded-pill bg-light px-1 mb-1">
                           <button
                             type="button"
-                            className="btn btn-outline-secondary"
+                            className="btn btn-sm btn-link p-0 px-2 text-decoration-none text-dark fw-bold"
                             onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                            title="Decrease quantity"
+                            aria-label="Decrease quantity"
+                            style={{ fontSize: "14px", lineHeight: "1" }}
                           >
                             −
                           </button>
-                          <span className="btn btn-light disabled text-dark fw-bold px-2">
+                          <span
+                            className="fw-bold px-1 small text-dark user-select-none"
+                            style={{ minWidth: "16px", textAlign: "center" }}
+                          >
                             {item.quantity}
                           </span>
                           <button
                             type="button"
-                            className="btn btn-outline-secondary"
+                            className="btn btn-sm btn-link p-0 px-2 text-decoration-none text-success fw-bold"
                             onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                            title="Increase quantity"
+                            aria-label="Increase quantity"
+                            style={{ fontSize: "14px", lineHeight: "1" }}
                           >
                             +
                           </button>

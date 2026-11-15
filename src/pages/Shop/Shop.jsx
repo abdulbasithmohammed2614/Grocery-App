@@ -3,7 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import Swal from "sweetalert2";
 import ScrollToTop from "../ScrollToTop";
 import { useCart } from "../../context/CartContext";
-import { fetchProductsFromDb, INITIAL_CATEGORIES } from "../../services/dataService";
+import { fetchProductsFromDb, fetchCategoriesFromDb, INITIAL_CATEGORIES } from "../../services/dataService";
 import assortment from "../../images/assortment-citrus-fruits.png";
 
 const Shop = () => {
@@ -11,6 +11,7 @@ const Shop = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState(INITIAL_CATEGORIES);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState(
     searchParams.get("category") || "All"
@@ -32,6 +33,7 @@ const Shop = () => {
     if (q !== null && q !== searchQuery) {
       setSearchQuery(q);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
   // Fetch products based on category
@@ -50,6 +52,19 @@ const Shop = () => {
       isMounted = false;
     };
   }, [selectedCategory]);
+
+  // Fetch dynamic categories with real item counts from DB
+  useEffect(() => {
+    let isMounted = true;
+    fetchCategoriesFromDb().then((cats) => {
+      if (isMounted && Array.isArray(cats) && cats.length > 0) {
+        setCategories(cats);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const handleCategorySelect = (catName) => {
     setSelectedCategory(catName);
@@ -173,7 +188,7 @@ const Shop = () => {
               </div>
 
               <div className="list-group list-group-flush border-0">
-                {INITIAL_CATEGORIES.map((cat) => {
+                {categories.map((cat) => {
                   const isSelected = selectedCategory === cat.name;
                   return (
                     <button

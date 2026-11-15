@@ -68,8 +68,36 @@ const runE2EValidation = async () => {
     assert(subtotal === 119, "Cart subtotal must equal ₹119");
   });
 
+  await testFlow(4, "Customer increases and decreases item quantity in Cart (+/- Stepper)", async () => {
+    let cart = [
+      { id: "p4", name: "Farm Fresh Eggs", price: 65, quantity: 1 },
+      { id: "p5", name: "Amul Taaza Milk", price: 27, quantity: 2 },
+    ];
+
+    const updateQuantity = (id, newQty) => {
+      if (newQty <= 0) {
+        cart = cart.filter((item) => item.id !== id);
+      } else {
+        cart = cart.map((item) => (item.id === id ? { ...item, quantity: newQty } : item));
+      }
+    };
+
+    // Increase Farm Fresh Eggs to 2
+    updateQuantity("p4", 2);
+    assert(cart.find((i) => i.id === "p4").quantity === 2, "Eggs quantity increased to 2");
+
+    // Decrease Amul Taaza Milk from 2 to 1
+    updateQuantity("p5", 1);
+    assert(cart.find((i) => i.id === "p5").quantity === 1, "Milk quantity decreased to 1");
+
+    // Decrease Amul Taaza Milk to 0 (auto-removal)
+    updateQuantity("p5", 0);
+    assert(cart.find((i) => i.id === "p5") === undefined, "Milk auto-removed on quantity 0");
+    assert(cart.length === 1, "Only 1 item remains in cart");
+  });
+
   // FLOW 2: Guest Checkout
-  await testFlow(4, "Customer clicks 'Quick Checkout' & fills Address Details", async () => {
+  await testFlow(5, "Customer clicks 'Quick Checkout' & fills Address Details", async () => {
     const address = {
       customer_name: "Kavita Rao",
       customer_phone: "9876543210",
@@ -81,7 +109,7 @@ const runE2EValidation = async () => {
     assert(address.customer_name && address.customer_phone && address.house_flat_no, "Address verified");
   });
 
-  await testFlow(5, "Customer presses 'Place Order (COD)' button", async () => {
+  await testFlow(6, "Customer presses 'Place Order (COD)' button", async () => {
     const orderPayload = {
       customer_name: "Kavita Rao",
       customer_phone: "9876543210",
@@ -116,7 +144,7 @@ const runE2EValidation = async () => {
   });
 
   // FLOW 3: Realtime Seller View & Processing
-  await testFlow(6, "Seller Dashboard receives incoming order via Realtime", async () => {
+  await testFlow(7, "Seller Dashboard receives incoming order via Realtime", async () => {
     const { data, error } = await supabase
       .from("orders")
       .select("*")
@@ -128,7 +156,7 @@ const runE2EValidation = async () => {
     assert(data.total_amount == 147, "Payable amount matches");
   });
 
-  await testFlow(7, "Seller presses 'Accept Order' button", async () => {
+  await testFlow(8, "Seller presses 'Accept Order' button", async () => {
     const { data, error } = await supabase
       .from("orders")
       .update({ order_status: "ACCEPTED" })
@@ -140,7 +168,7 @@ const runE2EValidation = async () => {
     assert(data.order_status === "ACCEPTED", "Order status must be ACCEPTED");
   });
 
-  await testFlow(8, "Seller presses 'Start Packing' button", async () => {
+  await testFlow(9, "Seller presses 'Start Packing' button", async () => {
     const { data, error } = await supabase
       .from("orders")
       .update({ order_status: "PACKING" })
@@ -151,7 +179,7 @@ const runE2EValidation = async () => {
     assert(!error && data.order_status === "PACKING", "Order status must be PACKING");
   });
 
-  await testFlow(9, "Seller presses 'Out for Delivery' button", async () => {
+  await testFlow(10, "Seller presses 'Out for Delivery' button", async () => {
     const { data, error } = await supabase
       .from("orders")
       .update({ order_status: "OUT_FOR_DELIVERY" })
@@ -162,7 +190,7 @@ const runE2EValidation = async () => {
     assert(!error && data.order_status === "OUT_FOR_DELIVERY", "Order status must be OUT_FOR_DELIVERY");
   });
 
-  await testFlow(10, "Seller presses 'Mark Delivered' button", async () => {
+  await testFlow(11, "Seller presses 'Mark Delivered' button", async () => {
     const { data, error } = await supabase
       .from("orders")
       .update({ order_status: "DELIVERED", payment_status: "PAID" })
@@ -175,13 +203,13 @@ const runE2EValidation = async () => {
   });
 
   // FLOW 4: Role Boundaries
-  await testFlow(11, "Security Check: Verify customer role cannot access Seller Portal", async () => {
+  await testFlow(12, "Security Check: Verify customer role cannot access Seller Portal", async () => {
     const customerUser = { name: "Kavita Rao", role: "customer", isGuest: true };
     const canAccessSeller = customerUser.role === "seller";
     assert(canAccessSeller === false, "Customer role must be blocked from seller routes");
   });
 
-  await testFlow(12, "Security Check: Verify store manager credentials", async () => {
+  await testFlow(13, "Security Check: Verify store manager credentials", async () => {
     const sellerCredentials = { email: "seller@grocery.com", password: "storepassword123" };
     const isValid =
       sellerCredentials.email === "seller@grocery.com" &&

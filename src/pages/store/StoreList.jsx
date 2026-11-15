@@ -54,7 +54,7 @@ const StoreList = () => {
         <div className="container">
           <div className="bg-light rounded-4 p-4 p-md-5 d-flex justify-content-between align-items-center">
             <div>
-              <span className="badge bg-success p-2 mb-2">⚡ Blinkit-Style Fast Delivery</span>
+              <span className="badge bg-success p-2 mb-2">⚡ FreshCart Fast Delivery</span>
               <h1 className="fw-bold mb-1">Local Grocery Stores</h1>
               <p className="text-muted mb-0">
                 Discover nearby fulfillment stores delivering fresh groceries in 10-15 minutes.

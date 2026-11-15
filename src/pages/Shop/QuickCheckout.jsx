@@ -3,10 +3,11 @@ import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
 import { useAuth } from "../../context/AuthContext";
 import { supabase } from "../../supabaseClient";
+import { API_BASE_URL } from "../../utils/apiConfig";
 
 const QuickCheckout = () => {
   const navigate = useNavigate();
-  const { cartItems, cartCount, cartTotal, clearCart } = useCart();
+  const { cartItems, cartCount, cartTotal, updateQuantity, removeFromCart, clearCart } = useCart();
   const { user } = useAuth();
 
   const [formData, setFormData] = useState({
@@ -103,13 +104,14 @@ const QuickCheckout = () => {
 
     // 1. Try Express backend API
     try {
-      const apiRes = await fetch("http://localhost:5000/api/orders", {
+      const apiRes = await fetch(`${API_BASE_URL}/api/orders`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(orderPayload),
       });
 
-      if (apiRes.ok) {
+      const cType = apiRes.headers.get("content-type") || "";
+      if (apiRes.ok && cType.includes("application/json")) {
         const json = await apiRes.json();
         if (json.success && json.order) {
           createdOrder = json.order;
@@ -156,11 +158,18 @@ const QuickCheckout = () => {
     const loaded = await loadRazorpay();
     if (!loaded) throw new Error("Unable to initialize Razorpay payment SDK.");
 
-    const res = await fetch("http://localhost:5000/api/payment/create-order", {
+    const res = await fetch(`${API_BASE_URL}/api/payment/create-order`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ amount: totalAmount }),
     });
+
+    const contentType = res.headers.get("content-type") || "";
+    if (!contentType.includes("application/json")) {
+      throw new Error(
+        "Backend server is not running on port 5000 (received HTML instead of JSON). Please run 'npm run server' in a terminal to start the API backend, or select Cash on Delivery."
+      );
+    }
 
     const orderData = await res.json();
     if (!res.ok || !orderData.success) {
@@ -171,16 +180,26 @@ const QuickCheckout = () => {
       key: orderData.key,
       amount: orderData.order.amount,
       currency: orderData.order.currency,
-      name: "Grocery App",
-      description: "Quick Grocery Order",
+      name: "FreshCart Quick Grocery",
+      description: `Delivery to ${formData.house_flat_no}, ${formData.apartment_area}`,
       order_id: orderData.order.id,
+      prefill: {
+        name: formData.customer_name,
+        contact: formData.customer_phone,
+        email: user?.email || "customer@example.com",
+      },
       handler: async (response) => {
         try {
-          const verifyRes = await fetch("http://localhost:5000/api/payment/verify", {
+          const verifyRes = await fetch(`${API_BASE_URL}/api/payment/verify`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(response),
           });
+
+          const vType = verifyRes.headers.get("content-type") || "";
+          if (!vType.includes("application/json")) {
+            throw new Error("Payment verification server returned non-JSON response.");
+          }
 
           const verifyData = await verifyRes.json();
           if (!verifyRes.ok || !verifyData.success) {
@@ -227,7 +246,7 @@ const QuickCheckout = () => {
       <div className="d-flex flex-wrap align-items-center justify-content-between p-3 mb-4 bg-light rounded-4 border gap-2">
         <div className="d-flex align-items-center gap-2">
           <span className="badge bg-success p-2">⚡ 15 MINS</span>
-          <span className="fw-semibold text-dark">Blinkit-Style Instant Delivery to your doorstep</span>
+          <span className="fw-semibold text-dark">FreshCart 10-15 Minute Express Delivery to your doorstep</span>
         </div>
         <div className="d-flex align-items-center gap-3">
           <span className="small text-muted">
@@ -237,8 +256,8 @@ const QuickCheckout = () => {
               <span>Ordering as: <strong>Guest</strong> • <Link to="/customer-login" className="text-success fw-semibold">Sign In</Link></span>
             )}
           </span>
-          <Link to="/ShopCart" className="text-decoration-none text-success small fw-bold">
-            ← Edit Cart ({cartCount})
+          <Link to="/Shop" className="text-decoration-none text-success small fw-bold">
+            ← Continue Shopping
           </Link>
         </div>
       </div>
@@ -409,16 +428,77 @@ const QuickCheckout = () => {
             <div className="card border-0 shadow-sm p-4 sticky-top" style={{ top: "90px", borderRadius: "16px" }}>
               <h5 className="fw-bold mb-3">Order Summary ({cartCount} items)</h5>
 
-              {/* Items List */}
-              <div className="mb-3" style={{ maxHeight: "240px", overflowY: "auto" }}>
-                {cartItems.map((item, idx) => (
-                  <div key={idx} className="d-flex justify-content-between align-items-center py-2 border-bottom">
-                    <div>
-                      <div className="fw-semibold text-dark small">{item.title || item.name}</div>
-                      <small className="text-muted">Qty: {item.quantity}</small>
-                    </div>
-                    <div className="fw-bold text-dark small">
-                      ₹{(Number(item.price || 0) * item.quantity).toFixed(2)}
+              {/* Items List with Add/Decrease Stepper */}
+              <div className="mb-3" style={{ maxHeight: "280px", overflowY: "auto" }}>
+                {cartItems.map((item) => (
+                  <div key={item.id} className="py-2 border-bottom">
+                    <div className="d-flex justify-content-between align-items-center">
+                      <div className="d-flex align-items-center gap-2" style={{ maxWidth: "55%" }}>
+                        {item.image && (
+                          <img
+                            src={item.image}
+                            alt={item.title || item.name}
+                            className="rounded border bg-light"
+                            style={{ width: "36px", height: "36px", objectFit: "contain", flexShrink: 0 }}
+                          />
+                        )}
+                        <div className="text-truncate">
+                          <div className="fw-semibold text-dark small text-truncate" title={item.title || item.name}>
+                            {item.title || item.name}
+                          </div>
+                          <small className="text-muted">₹{Number(item.price || 0).toFixed(2)} each</small>
+                        </div>
+                      </div>
+
+                      {/* Add + Decrease stepper & item total */}
+                      <div className="d-flex align-items-center gap-2">
+                        <div
+                          className="d-flex align-items-center border rounded-pill bg-light px-1"
+                          style={{ borderColor: "#dee2e6" }}
+                        >
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-link p-0 px-2 text-decoration-none text-dark fw-bold"
+                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                            title="Decrease quantity"
+                            aria-label="Decrease quantity"
+                            style={{ fontSize: "14px", lineHeight: "1" }}
+                          >
+                            −
+                          </button>
+                          <span
+                            className="fw-bold px-1 small text-dark user-select-none"
+                            style={{ minWidth: "16px", textAlign: "center" }}
+                          >
+                            {item.quantity}
+                          </span>
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-link p-0 px-2 text-decoration-none text-success fw-bold"
+                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                            title="Increase quantity"
+                            aria-label="Increase quantity"
+                            style={{ fontSize: "14px", lineHeight: "1" }}
+                          >
+                            +
+                          </button>
+                        </div>
+
+                        <div className="fw-bold text-dark small text-end" style={{ minWidth: "55px" }}>
+                          ₹{(Number(item.price || 0) * item.quantity).toFixed(2)}
+                        </div>
+
+                        <button
+                          type="button"
+                          className="btn btn-link text-danger p-0 ms-1 border-0"
+                          onClick={() => removeFromCart(item.id)}
+                          title="Remove item"
+                          aria-label="Remove item"
+                          style={{ fontSize: "12px", textDecoration: "none" }}
+                        >
+                          ✕
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}

@@ -2,6 +2,7 @@
   "name": "ngo-react",
   "version": "0.1.0",
   "private": true,
+  "proxy": "http://localhost:5000",
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
@@ -41,6 +42,7 @@
   "scripts": {
     "start": "react-scripts start",
     "server": "node server/server.js",
+    "secrets:seed": "node scripts/seed-secrets.js",
     "test:backend": "node test/backend-test.js",
     "test:e2e": "node test/e2e-simulation-test.js",
     "build": "react-scripts build",

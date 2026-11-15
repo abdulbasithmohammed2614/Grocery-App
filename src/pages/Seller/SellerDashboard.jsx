@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../../supabaseClient";
 import { playOrderChime } from "../../utils/audioAlert";
 import { useAuth } from "../../context/AuthContext";
+import { API_BASE_URL } from "../../utils/apiConfig";
 
 const STATUS_CONFIG = {
   RECEIVED: { label: "New Order", color: "warning", next: "ACCEPTED", nextLabel: "Accept Order", nextIcon: "✓" },
@@ -81,12 +82,13 @@ const SellerDashboard = () => {
     try {
       let updatedViaApi = false;
       try {
-        const res = await fetch(`http://localhost:5000/api/orders/${orderId}/status`, {
+        const res = await fetch(`${API_BASE_URL}/api/orders/${orderId}/status`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ order_status: newStatus }),
         });
-        if (res.ok) {
+        const cType = res.headers.get("content-type") || "";
+        if (res.ok && cType.includes("application/json")) {
           const data = await res.json();
           if (data.success && data.order) {
             updatedViaApi = true;

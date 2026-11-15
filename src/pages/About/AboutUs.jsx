@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import ScrollToTop from "../ScrollToTop";
-import blinkit from "../../images/blinkit.png";
+import groceryBanner from "../../images/grocery-banner.png";
 import idea from "../../images/idea.gif";
 import team from "../../images/team.gif";
 import award from "../../images/award.gif";
@@ -51,7 +51,7 @@ const AboutUs = () => {
             <div className="col-lg-5 text-center">
               <Zoom>
                 <img
-                  src={blinkit}
+                  src={groceryBanner}
                   alt="Quick Grocery Delivery"
                   className="img-fluid rounded-4 shadow-sm"
                   style={{ maxHeight: "280px", objectFit: "contain" }}

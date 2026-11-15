@@ -143,12 +143,10 @@ const ShopCart = () => {
 
                           {/* Quantity controls */}
                           <div className="col-4 col-md-2">
-
-                            <div className="d-flex align-items-center justify-content-center border rounded">
-
+                            <div className="d-inline-flex align-items-center border rounded-pill bg-light p-1 shadow-sm">
                               <button
                                 type="button"
-                                className="btn btn-sm"
+                                className="btn btn-sm btn-link text-dark fw-bold p-0 px-2 text-decoration-none"
                                 onClick={() =>
                                   updateQuantity(
                                     item.id,
@@ -156,17 +154,22 @@ const ShopCart = () => {
                                   )
                                 }
                                 aria-label="Decrease quantity"
+                                title="Decrease quantity"
+                                style={{ fontSize: "16px", lineHeight: "1" }}
                               >
                                 −
                               </button>
 
-                              <span className="fw-bold px-2">
+                              <span
+                                className="fw-bold px-2 text-dark user-select-none"
+                                style={{ minWidth: "24px", textAlign: "center" }}
+                              >
                                 {item.quantity}
                               </span>
 
                               <button
                                 type="button"
-                                className="btn btn-sm"
+                                className="btn btn-sm btn-link text-success fw-bold p-0 px-2 text-decoration-none"
                                 onClick={() =>
                                   updateQuantity(
                                     item.id,
@@ -174,12 +177,12 @@ const ShopCart = () => {
                                   )
                                 }
                                 aria-label="Increase quantity"
+                                title="Increase quantity"
+                                style={{ fontSize: "16px", lineHeight: "1" }}
                               >
                                 +
                               </button>
-
                             </div>
-
                           </div>
 
                           {/* Item total */}

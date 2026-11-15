@@ -27,7 +27,7 @@ export const playOrderChime = () => {
       osc.stop(ctx.currentTime + startTime + duration);
     };
 
-    // 3 pleasant ascending chimes (like Blinkit / Swiggy merchant order alert)
+    // 3 pleasant ascending chimes (FreshCart order alert)
     playTone(587.33, 0.0, 0.25); // D5
     playTone(739.99, 0.2, 0.25); // F#5
     playTone(880.0, 0.4, 0.45);  // A5

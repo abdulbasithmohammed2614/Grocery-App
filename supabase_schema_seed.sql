@@ -1,5 +1,5 @@
 -- =========================================================================
--- Supabase Schema & Dummy Data Seed for Blinkit-Style Grocery App
+-- Supabase Schema & Dummy Data Seed for FreshCart Grocery App
 -- Run this in your Supabase SQL Editor (>_) to create and populate tables!
 -- =========================================================================
 
@@ -51,17 +51,17 @@ create policy "Public read products" on public.products for select using (true);
 create policy "Public read categories" on public.categories for select using (true);
 create policy "Public read stores" on public.stores for select using (true);
 
--- 5. Insert Categories
+-- 5. Insert Categories (Initial seed; live counts computed dynamically from products table)
 insert into public.categories (id, name, item_count, icon)
 values
-  ('c1', 'Dairy, Bread & Eggs', 18, '🥛'),
-  ('c2', 'Snacks & Munchies', 24, '🍿'),
-  ('c3', 'Fruits & Vegetables', 32, '🥦'),
-  ('c4', 'Bakery & Biscuits', 15, '🍞'),
-  ('c5', 'Instant Food', 12, '🍜'),
-  ('c6', 'Cold Drinks & Juices', 14, '🥤'),
-  ('c7', 'Atta, Rice & Dal', 28, '🌾')
-on conflict (id) do update set name = excluded.name;
+  ('c1', 'Dairy, Bread & Eggs', 2, '🥛'),
+  ('c2', 'Snacks & Munchies', 2, '🍿'),
+  ('c3', 'Fruits & Vegetables', 2, '🥦'),
+  ('c4', 'Bakery & Biscuits', 2, '🍞'),
+  ('c5', 'Instant Food', 1, '🍜'),
+  ('c6', 'Cold Drinks & Juices', 1, '🥤'),
+  ('c7', 'Atta, Rice & Dal', 2, '🌾')
+on conflict (id) do update set name = excluded.name, item_count = excluded.item_count;
 
 -- 6. Insert Products with Dummy Grocery Data
 insert into public.products (id, name, category, price, old_price, unit, rating, reviews, badge, is_popular, is_best_seller)
@@ -83,7 +83,7 @@ on conflict (id) do update set price = excluded.price;
 -- 7. Insert Stores
 insert into public.stores (id, name, type, location, delivery_time, min_order, rating, status, distance, tags)
 values
-  ('st1', 'Blinkit Darkstore - Indiranagar', 'Express Quick Delivery', '100ft Road, Indiranagar, Bangalore', '10-15 mins', 99, 4.9, 'Open Now', '1.2 km', array['Vegetables', 'Dairy', 'Snacks', 'Quick 10m']),
+  ('st1', 'FreshCart Express Darkstore - Indiranagar', 'Express Quick Delivery', '100ft Road, Indiranagar, Bangalore', '10-15 mins', 99, 4.9, 'Open Now', '1.2 km', array['Vegetables', 'Dairy', 'Snacks', 'Quick 10m']),
   ('st2', 'FreshCart Daily Supermarket', 'Supermarket & Groceries', '4th Block, Koramangala, Bangalore', '15-20 mins', 149, 4.8, 'Open Now', '2.5 km', array['Organic', 'Bakery', 'Household', 'Groceries']),
   ('st3', 'Nature''s Basket Organic Express', 'Gourmet & Organic', 'CMH Road, Indiranagar, Bangalore', '15-25 mins', 199, 4.9, 'Open Now', '3.1 km', array['Exotic Fruits', 'Artisanal Cheese', 'Organic']),
   ('st4', 'Daily Fresh Meat & Fish Market', 'Fresh Cuts & Protein', 'Sector 2, HSR Layout, Bangalore', '20-30 mins', 199, 4.7, 'Open Now', '4.0 km', array['Fresh Chicken', 'Mutton', 'Fish & Seafood']),
